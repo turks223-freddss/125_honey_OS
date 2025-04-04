@@ -55,7 +55,7 @@ def play_video(path, window_size):
     cv2.imshow('Video', frame)
 
     # Check if 14 seconds have passed
-    if time.time() - start_time > 13:
+    if time.time() - start_time > 0:
       break
 
     if cv2.waitKey(15) & 0xFF == ord('q') or cv2.getWindowProperty(
