@@ -221,8 +221,7 @@ dark_theme = {
 unsaved_changes = False
 
 #light mode default
-is_dark_mode = TRUE
-
+is_dark_mode = False
 
 def set_file_path(path):
   global file_path
@@ -422,17 +421,13 @@ def voice_commands():
         redo_text()
       # change theme to dark mode
       elif "dark mode please" in command_text.lower():
-        is_dark_mode = True
         toggle_theme()
       elif "dark" in command_text.lower():
-        is_dark_mode = True
         toggle_theme()
       # change theme to light mode
       elif "light mode please" in command_text.lower():
-        is_dark_mode = False
         toggle_theme()
       elif "open the curtains please" in command_text.lower():
-        is_dark_mode = False
         toggle_theme()
       # minimize window
       elif "minimize please" in command_text.lower():
