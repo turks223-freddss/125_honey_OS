@@ -1,0 +1,90 @@
+from tkinter import *
+from tkinter.filedialog import asksaveasfilename, askopenfilename
+import tkinter.messagebox
+from tkinter import messagebox
+import subprocess
+import os
+
+compiler = Tk()
+compiler.title('Bluefire IDE')
+file_path = ''
+
+def set_file_path(path):
+    global file_path
+    file_path = path
+
+def open_file():
+    path = askopenfilename(filetypes=[('Python Files', '*.py')])
+    if path:
+        with open(path, 'r') as file:
+            code = file.read()
+            editor.delete('1.0', END)
+            editor.insert('1.0', code)
+            set_file_path(path)
+
+def save():
+    global file_path
+    code = editor.get('1.0', END).strip()
+    if not code:
+        tkinter.messagebox.showerror("Unable to Save", "There is no content to save.")
+        return
+    if not file_path:
+        path = asksaveasfilename(filetypes=[('Python Files', '*.py')])
+    else:
+        path = file_path
+    if not path:
+        return
+    if not path.endswith('.py'):
+        path += '.py'
+    with open(path, 'w') as file:
+        file.write(code)
+        set_file_path(path)
+
+def save_as():
+    code = editor.get('1.0', END).strip()
+    if not code:
+        tkinter.messagebox.showerror("Unable to Save", "There is no content to save.")
+        return
+    path = asksaveasfilename(filetypes=[('Python Files', '*.py')])
+    if not path:
+        return
+    if not path.endswith('.py'):
+        path += '.py'
+    with open(path, 'w') as file:
+        file.write(code)
+        set_file_path(path)
+
+def run():
+    global file_path
+    if not file_path or not os.path.isfile(file_path):
+        messagebox.showerror("Error", "No file selected or file does not exist.")
+        return
+    if not file_path.endswith('.py'):
+        messagebox.showerror("Error", "Selected file is not a Python script.")
+        return
+    code_output.delete('1.0', END)
+    command = ["python", file_path]
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    output, error = process.communicate()
+    if output:
+        code_output.insert('1.0', output)
+    if error:
+        code_output.insert(END, '\n' + 'Errors:' + '\n' + error)
+
+menu_bar = Menu(compiler)
+
+# Adding buttons directly to the menu bar
+menu_bar.add_command(label='Open File', command=open_file)
+menu_bar.add_command(label='Save', command=save)
+menu_bar.add_command(label='Save As...', command=save_as)
+menu_bar.add_command(label='Run', command=run)
+
+compiler.config(menu=menu_bar)
+
+editor = Text()
+editor.pack(fill=BOTH, expand=True)
+
+code_output = Text(height=10)
+code_output.pack(fill=BOTH, expand=True)
+
+compiler.mainloop()

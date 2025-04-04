@@ -1,0 +1,520 @@
+from tkinter import *
+from tkinter.filedialog import asksaveasfilename, askopenfilename
+import tkinter.messagebox
+from tkinter import messagebox
+import subprocess
+import os
+from PIL import Image, ImageTk  # Import Pillow for image handling
+import speech_recognition as sr
+import noisereduce as nr
+import numpy as np
+import threading
+from tkinter import Tk, Button
+
+
+Honey_screen = Tk()
+Honey_screen.title('Bluefire IDE')
+file_path = ''
+
+# Get the screen width and height
+Honey_screen_width = Honey_screen.winfo_screenwidth()
+Honey_screen_height= Honey_screen.winfo_screenheight()
+
+# Set the window to full screen
+Honey_screen.geometry(f"{screen_width}x{screen_height}+0+0")
+
+############################################################################################
+        ######                         DICTIONARY                          ######
+############################################################################################
+
+light_theme = {
+    "bg": "#FFFFFF",
+    "fg": "#000000",
+    "button_bg": "#F0F0F0",
+    "editor_bg": "#F8F8F2",
+    "editor_fg": "#000000",
+    "toolbar_bg": "#F0F0F0",
+    "output_bg": "#F8F8F2",
+    "output_fg": "#000000",
+}
+
+dark_theme = {
+    "bg": "#282a36",
+    "fg": "#f8f8f2",
+    "button_bg": "#41454a",
+    "editor_bg": "#282a36",
+    "editor_fg": "#f8f8f2",
+    "toolbar_bg": "#41454a",
+    "output_bg": "#282a36",
+    "output_fg": "#f8f8f2",
+}
+
+############################################################################################
+        ######                                                               ######
+############################################################################################
+
+
+# A flag to help keep track of the buttons
+unsaved_changes = False
+
+#light mode default
+is_dark_mode = TRUE
+
+def set_file_path(path):
+    global file_path
+    file_path = path
+
+def resize_icon(path, size=(32, 32)):
+    img = Image.open(path)
+    img = img.resize(size, Image.Resampling.LANCZOS)
+    return ImageTk.PhotoImage(img)
+
+
+# Adjust these paths to your actual icon paths
+############################################################################################
+        ######                         PATH AND ICONS                         ######
+############################################################################################
+new_file_icon_path = 'Practice/assets/new_file.png'
+open_file_icon_path = 'Practice/assets/existing_file.png'
+open_microp_path = 'Practice/assets/microphone.png'
+save_path = 'Practice/assets/save.png'
+save_as_path = 'Practice/assets/save_as.png'
+copy_icon_path = 'Practice/assets/copy.png'
+paste_path = 'Practice/assets/clipboard.png'
+cut_path = 'Practice/assets/scissors.png'
+undo_path = 'Practice/assets/refresh.png'
+redo_path = 'Practice/assets/redo.png'
+close_path = 'Practice/assets/cross.png'
+
+new_file_icon = resize_icon(new_file_icon_path, size=(32, 32))
+open_file_icon = resize_icon(open_file_icon_path, size=(32, 32))
+open_microp_icon = resize_icon(open_microp_path, size=(32, 32))
+save_icon = resize_icon(save_path, size=(32,32))
+save_as_icon = resize_icon(save_as_path, size=(32,32))
+copy_icon = resize_icon(copy_icon_path, size=(32,32))
+paste_icon = resize_icon(paste_path, size=(32,32))
+cut_icon = resize_icon(cut_path, size=(32,32))
+undo_icon = resize_icon(undo_path, size=(32,32))
+redo_icon = resize_icon(redo_path, size=(32,32))
+close_icon = resize_icon(close_path, size=(32,32))
+
+############################################################################################
+        ######                                                               ######
+############################################################################################
+
+def close_window():
+    Honey_screen.destroy()
+
+class ToolTip(object):
+    def __init__(self, widget):
+        self.widget = widget
+        self.tipwindow = None
+        self.x = self.y = 0
+        self.text = None  # Add a text attribute to store the tooltip text
+
+    def showtip(self, text):
+        """Display text in tooltip window"""
+        self.text = text  # Store the text to be displayed in the tooltip
+        if self.tipwindow or not self.text:
+            return
+        x, y, _, _ = self.widget.bbox("insert")
+        x = x + self.widget.winfo_rootx() + 25
+        y = y + self.widget.winfo_rooty() + 20
+        self.tipwindow = tw = Toplevel(self.widget)
+        tw.wm_overrideredirect(True)
+        tw.wm_geometry("+%d+%d" % (x, y))
+        label = Label(tw, text=self.text, justify=LEFT,  # Use self.text here
+                      background="#ffffe0", relief=SOLID, borderwidth=1,
+                      font=("tahpma", "10", "normal"))
+        label.pack(ipadx=1)
+
+    def hidetip(self):
+        if self.tipwindow:
+            self.tipwindow.destroy()
+            self.tipwindow = None
+
+
+def createToolTip(widget, text):
+    toolTip = ToolTip(widget)
+    def enter(event):
+        toolTip.showtip(text)
+    def leave(event):
+        toolTip.hidetip()
+    widget.bind('<Enter>', enter)
+    widget.bind('<Leave>', leave)
+
+def display_voice_command_feedback(text):
+    # Clear previous feedback
+    voice_command_feedback.config(state=NORMAL)
+    voice_command_feedback.delete('1.0', END)
+    
+    # Display new feedback
+    voice_command_feedback.insert('1.0', text)
+    voice_command_feedback.config(state=DISABLED)
+
+
+
+def listen_for_commands():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        r.adjust_for_ambient_noise(source)
+        print("Say 'Play' to activate commands...")
+        while True:
+            try:
+                audio_data = r.listen(source)
+                # Convert the AudioData to raw audio bytes
+                raw_data = audio_data.get_raw_data()
+
+                # Convert raw data to numpy array
+                np_data = np.frombuffer(raw_data, dtype=np.int16)
+
+                # Apply noise reduction
+                reduced_noise_data = nr.reduce_noise(y=np_data, sr=source.SAMPLE_RATE)
+
+                # Convert back to AudioData
+                new_audio_data = sr.AudioData(reduced_noise_data.tobytes(), source.SAMPLE_RATE, audio_data.sample_width)
+                text = r.recognize_google(new_audio_data).lower()
+                if "play" in text:
+                    display_voice_command_feedback("Activated, listening for commands...")
+                    voice_commands()  # Call the command processing function
+                    break
+            except sr.UnknownValueError:
+                pass
+            except sr.RequestError as e:
+                print(f"Could not request results; {e}")
+
+
+def activate_commands():
+    display_voice_command_feedback("Button activated, listening for commands...")
+    voice_commands()
+
+def voice_commands():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        try:
+            audio_data = r.listen(source, timeout=5)
+            # Convert the AudioData to raw audio bytes
+            raw_data = audio_data.get_raw_data()
+            # Convert raw data to numpy array
+            np_data = np.frombuffer(raw_data, dtype=np.int16)
+            # Apply noise reduction
+            reduced_noise_data = nr.reduce_noise(y=np_data, sr=source.SAMPLE_RATE)
+            # Convert back to AudioData
+            new_audio_data = sr.AudioData(reduced_noise_data.tobytes(), source.SAMPLE_RATE, audio_data.sample_width)
+            command_text = r.recognize_google(new_audio_data).lower()
+            display_voice_command_feedback(f"Recognized: {command_text}")
+            # Add your command processing logic here
+        except Exception as e:
+            display_voice_command_feedback(f"Error: {str(e)}")
+
+############################################################################################
+        ######                         VOICE COMMANDS                         ######
+############################################################################################
+                        
+            # open a new file
+            if "new file" in command_text.lower():
+                open_new_file()
+            # open an existing file
+            elif "existing file" in command_text.lower():
+                open_existing_file()
+            # save file
+            elif "save" in command_text.lower():
+                save()
+            # Open text editor
+            elif "open editor" in command_text.lower():
+                open_editor()
+            # change theme
+            elif "dark mode" in command_text.lower():
+                global is_dark_mode 
+                is_dark_mode = True
+                toggle_theme()
+            elif "light mode" in command_text.lower():
+                is_dark_mode = False
+                toggle_theme()
+
+        except Exception as e:
+            display_voice_command_feedback(f"Error: {str(e)}")
+
+############################################################################################
+        ######                                                               ######
+############################################################################################
+
+def start_listening():
+    open_microp_btn.config(bg= "#008DDA")
+    threading.Thread(target=listen_for_commands, daemon=True).start()
+
+# Enables the button once it notice text in the editor
+def check_text_and_toggle_buttons(event=None):
+    global unsaved_changes
+    content = editor.get("1.0", END).strip()
+    if content:
+        unsaved_changes = True
+        enable_buttons(NORMAL)
+    else:
+        unsaved_changes = False
+        enable_buttons(DISABLED)
+
+############################################################################################
+    ######                         Button Functions                         ######
+############################################################################################
+        
+# Open new file
+def open_new_file():
+    global file_path
+    global unsaved_changes
+
+    editor.delete('1.0', END)
+    file_path = ''
+    Honey_screen.title('Bluefire - New File')
+    unsaved_changes = False
+    enable_buttons(DISABLED)
+
+# Opens an existing file
+def open_existing_file():
+    global file_path
+    global unsaved_changes
+
+    path = askopenfilename(filetypes=[('Python Files', '*.py')])
+    if path:
+        with open(path, 'r') as file:
+            code = file.read()
+            editor.delete('1.0', END)
+            editor.insert('1.0', code)
+            set_file_path(path)
+            Honey_screen.title(f'Bluefire - {os.path.basename(path)}')
+    unsaved_changes = False
+    enable_buttons(DISABLED)
+
+# This function is to save the content of the editor
+def save():
+    global file_path
+    global unsaved_changes
+
+    code = editor.get('1.0', END).strip()
+    if not code:
+        # toggle_button_state(save_btn, DISABLED)
+        # tkinter.messagebox.showerror("Unable to Save", "There is no content to save.")
+        return
+    if not file_path:
+        path = asksaveasfilename(filetypes=[('Bluefire Files', '*.blu')])
+    else:
+        path = file_path
+    if not path:
+        return
+    if not path.endswith('.blu'):
+        path += '.blu'
+    with open(path, 'w') as file:
+        file.write(code)
+        set_file_path(path)
+    unsaved_changes = False
+    enable_buttons(DISABLED)
+
+# This function saves the content of the editor to a new file 
+def save_as():
+    global unsaved_changes
+
+    code = editor.get('1.0', END).strip()
+    if not code:
+        tkinter.messagebox.showerror("Unable to Save", "There is no content to save.")
+        return
+    path = asksaveasfilename(filetypes=[('Bluefire Files', '*.blu')])
+    if not path:
+        return
+    if not path.endswith('.blu'):
+        path += '.blu'
+    with open(path, 'w') as file:
+        file.write(code)
+        set_file_path(path)
+    unsaved_changes = False
+    enable_buttons(DISABLED)
+
+# This function is to open the editor text area
+def open_editor():
+    # Text Area
+    global editor
+    if 'editor' not in globals():  # Check if editor does not exist and create it
+        # Initially create the editor and bind the double-click event
+        editor = Text(Honey_screen, height=10)  # Assuming 'Honey_screen' is your Tk root window
+        editor.pack(fill=BOTH, expand=True)
+        editor.bind("<KeyRelease>", check_text_and_toggle_buttons)
+        editor.bind("<Double-1>", hide_editor)
+    else:
+        editor.pack(fill=BOTH, expand=True)  # If already exists, just re-pack (show) it
+
+############################################################################################
+        ######                                                               ######
+############################################################################################
+
+def hide_editor(event=None):
+    editor.pack_forget()  # This hides the editor widget
+
+def cut_text():
+    editor.event_generate("<<Cut>>")
+
+def copy_text():
+    editor.event_generate("<<Copy>>")
+
+def paste_text():
+    editor.event_generate("<<Paste>>")
+
+def undo_text():
+    editor.event_generate("<<Undo>>")
+
+def redo_text():
+    editor.event_generate("<<Redo>>")
+
+
+# This is a toggle for the light and dark theme
+def toggle_theme():
+    global is_dark_mode
+    theme = dark_theme if is_dark_mode else light_theme
+    
+    # Update main window background
+    Honey_screen.config(bg=theme["bg"])
+    
+    # Update editor
+    if 'editor' in globals():
+        editor.config(bg=theme["editor_bg"], fg=theme["editor_fg"], insertbackground=theme["fg"])
+    
+    # Update toolbar and its children (buttons)
+    toolbar.config(bg=theme["toolbar_bg"])
+    for widget in toolbar.winfo_children():
+        widget.config(bg=theme["button_bg"], activebackground=theme["button_bg"])
+    
+    # Update voice command feedback and code output
+    voice_command_feedback.config(bg=theme["editor_bg"], fg=theme["editor_fg"], insertbackground=theme["fg"])
+    
+    # Toggle the flag for next switch
+    is_dark_mode = not is_dark_mode
+
+# This function disables of the buttons
+def enable_buttons(state):
+    save_btn.config(state = state)
+    save_as_btn.config(state = state)
+    copy_btn.config(state = state)
+    paste_btn.config(state = state)
+    cut_btn.config(state = state)
+    undo_btn.config(state = state)
+    redo_btn.config(state = state)
+
+############################################################################################
+        ######                      TOOLBAR  |  BUTTONS                       ######
+############################################################################################
+
+def create_toolbar():
+    global toolbar
+    toolbar = Frame(Honey_screen, bd=1, relief=RAISED)
+
+    # New File Button
+    new_file_btn = Button(toolbar, image=new_file_icon, command=open_new_file, relief=FLAT)
+    new_file_btn.image = new_file_icon
+    new_file_btn.pack(side=LEFT, padx=2, pady=2)
+    createToolTip(new_file_btn, "New File")
+    
+    # Open Existing File Button
+    open_file_btn = Button(toolbar, image=open_file_icon, command=open_existing_file, relief=FLAT)
+    open_file_btn.image = open_file_icon
+    open_file_btn.pack(side=LEFT, padx=2, pady=2)
+    createToolTip(open_file_btn, "Existing File")
+
+    # Save Button
+    global save_btn
+    save_btn = Button(toolbar, image=save_icon, command=save, relief=FLAT)
+    save_btn.image = save_icon
+    save_btn.pack(side=LEFT, padx=2, pady=2)
+    createToolTip(save_btn, "Save")
+
+    # Save As Button
+    global save_as_btn
+    save_as_btn = Button(toolbar, image=save_as_icon, command=save_as, relief=FLAT)
+    save_as_btn.image = save_as_icon
+    save_as_btn.pack(side=LEFT, padx=2, pady=2)
+    createToolTip(save_as_btn, "Save As")
+
+    # Copy Button
+    global copy_btn
+    copy_btn = Button(toolbar, image=copy_icon, command=copy_text, relief=FLAT)
+    copy_btn.image = copy_icon
+    copy_btn.pack(side=LEFT, padx=2, pady=2)
+    createToolTip(copy_btn, "Copy")
+
+    # Paste Button
+    global paste_btn
+    paste_btn = Button(toolbar, image=paste_icon, command=paste_text, relief=FLAT)
+    paste_btn.image = paste_icon
+    paste_btn.pack(side=LEFT, padx=2, pady=2)
+    createToolTip(paste_btn, "Paste")
+
+    # Cut Button
+    global cut_btn
+    cut_btn = Button(toolbar, image=cut_icon, command=cut_text, relief=FLAT)
+    cut_btn.image = cut_icon
+    cut_btn.pack(side=LEFT, padx=2, pady=2)
+    createToolTip(cut_btn, "Cut")
+    
+    # Undo Button
+    global undo_btn
+    undo_btn = Button(toolbar, image=redo_icon, command=undo_text, relief=FLAT)
+    undo_btn.image = redo_icon
+    undo_btn.pack(side=LEFT, padx=2, pady=2)
+    createToolTip(undo_btn, "Undo")
+
+    # Redo Button
+    global redo_btn
+    redo_btn = Button(toolbar, image=undo_icon, command=redo_text, relief=FLAT)
+    redo_btn.image = undo_icon
+    redo_btn.pack(side=LEFT, padx=2, pady=2)
+    createToolTip(redo_btn, "Redo")
+
+    # Microphone Button
+    global open_microp_btn
+    open_microp_btn = Button(toolbar, image=open_microp_icon, command=activate_commands, relief=FLAT)
+    open_microp_btn.image = open_microp_icon
+    open_microp_btn.pack(side=RIGHT, padx=10, pady=2)
+    createToolTip(open_microp_btn, "Honey")
+
+    # Exit Button
+    global close_btn
+    close_btn = Button(toolbar, image=close_icon, command=close_window, relief=FLAT)
+    close_btn.image = close_icon
+    close_btn.pack(side=RIGHT, padx=2, pady=2)
+    createToolTip(close_btn, "Exit")
+
+
+    # Toogle Button for theme
+    toggle_theme_btn = Button(toolbar, text="Theme", command=toggle_theme, relief=FLAT)
+    toggle_theme_btn.pack(side=LEFT, padx=2, pady=2)
+
+    editor_btn = Button(toolbar, text="Editor", command=open_editor, relief=FLAT)
+    editor_btn.pack(side=LEFT, padx=2, pady=2)
+
+    
+    toolbar.pack(side=TOP, fill=X)
+
+create_toolbar()
+
+############################################################################################
+        ######                                                               ######
+############################################################################################
+
+
+# Voice command feedback area
+voice_command_feedback = Text(Honey_screen, height=2, state=DISABLED)
+voice_command_feedback.pack(side=BOTTOM, fill=X)
+
+
+# Honey_screen Area
+# code_output = Text(height=10)
+# code_output.pack(fill=BOTH, expand=True)
+
+
+enable_buttons(DISABLED)
+start_listening()
+
+def quit_fullscreen(event):
+    Honey_screen.destroy()
+
+Honey_screen.bind('<q>', quit_fullscreen)
+
+# Honey_screen.overrideredirect(True)  # This removes the window decorations
+Honey_screen.mainloop()
