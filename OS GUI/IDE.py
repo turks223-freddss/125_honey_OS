@@ -14,6 +14,7 @@ import pyaudio
 import wave
 import cv2
 import time
+from bluefire_ide import file_operations, file_state, main, ui_elements, runner, editor_actions
 
 
 def play_video(path, window_size):
@@ -226,11 +227,6 @@ unsaved_changes = False
 
 #light mode default
 is_dark_mode = False
-
-def set_file_path(path):
-  global file_path
-  file_path = path
-
 
 def resize_icon(path, size=(32, 32)):
   img = Image.open(path)
@@ -523,8 +519,7 @@ def check_text_and_toggle_buttons(event=None):
 
 # Open new file
 def open_new_file():
-  global file_path
-  global unsaved_changes
+  global file_path, unsaved_changes
   
   # editor = create_tab(title= 'Untitled')
   editor.delete('1.0', END)
@@ -538,96 +533,36 @@ def open_new_file():
 
 # Opens an existing file
 def open_existing_file():
-  global file_path
-  global unsaved_changes
+  global file_path, unsaved_changes
+  file_operations.open_file(editor)
+  path = file_state.get_file_path()
 
-  code = editor.get('1.0', END).strip()
-
-  if code:
-    tkinter.messagebox.showerror("Unable to Save", "Do you want to save changes?")
-  path = askopenfilename(filetypes=[('Bluefire Files', '*.blu')])
   if path:
-    with open(path, 'r') as file:
-      code = file.read()
+    Honey_screen.title(f'Bluefire - {os.path.basename(path)}')
 
-      editor.delete('1.0', END)
-      # editor = create_tab(content=code, title=os.path.basename(path))
-
-      editor.insert('1.0', code)
-      set_file_path(path)
-      Honey_screen.title(f'Bluefire - {os.path.basename(path)}')
-
-      display_voice_command_feedback(path)
   unsaved_changes = False
   disabled_buttons(DISABLED)
 
 
 # This function is to save the content of the editor
 def save():
-  global file_path
-  global unsaved_changes
-
-  code = editor.get('1.0', END).strip()
-  if code:
-    # toggle_button_state(save_btn, DISABLED)
-    tkinter.messagebox.showerror("Unable to Save", "Do you want to save changes?")
-    return
-  if not file_path:
-    path = asksaveasfilename(filetypes=[('Bluefire Files', '*.blu')])
-  else:
-    path = file_path
-  if not path:
-    return
-  if not path.endswith('.blu'):
-    path += '.blu'
-  with open(path, 'w') as file:
-    file.write(code)
-    set_file_path(path)
-  unsaved_changes = False
-  enable_buttons(NORMAL)
+  file_operations.save(editor)
 
 
 # This function saves the content of the editor to a new file
 def save_as():
-  global unsaved_changes
-
-  code = editor.get('1.0', END).strip()
-  if not code:
-    tkinter.messagebox.showerror("Unable to Save", "There is no content to save.")
-    return
-  path = asksaveasfilename(filetypes=[('Bluefire Files', '*.blu')])
-  if not path:
-    return
-  if not path.endswith('.blu'):
-    path += '.blu'
-  with open(path, 'w') as file:
-    file.write(code)
-    set_file_path(path)
-  unsaved_changes = False
+  file_operations.save_as(editor)
 
 
 def hide_editor(event=None):
   editor.pack_forget()  # This hides the editor widget
 
 
-def cut_text():
-  editor.event_generate("<<Cut>>")
-
-
-def copy_text():
-  editor.event_generate("<<Copy>>")
-
-
-def paste_text():
-  editor.event_generate("<<Paste>>")
-
-
-def undo_text():
-  editor.edit_undo()
-
-
-def redo_text():
-  editor.edit_redo()
+cut_text = lambda: editor_actions.cut(editor)
+copy_text = lambda: editor_actions.copy(editor)
+paste_text = lambda: editor_actions.paste(editor)
+undo_text = lambda: editor_actions.undo(editor)
+redo_text = lambda: editor_actions.redo(editor)
 
 ############################################################################################
 ######                                                               ######
@@ -681,34 +616,26 @@ def enable_buttons(state):
 
 
 def create_toolbar_top():
-  global toolbar
+  global toolbar, save_as_btn, save_btn
   toolbar = Frame(Honey_screen, relief=FLAT)
-
-
 
   # New File Button
   new_file_btn = Button(toolbar, image=new_file_icon, command=open_new_file, relief=FLAT)
-  new_file_btn.image = new_file_icon
   new_file_btn.pack(side=LEFT, padx=2, pady=2)
   createToolTip(new_file_btn, "New File")
 
   # Open Existing File Button
   open_file_btn = Button(toolbar, image=open_file_icon, command=open_existing_file, relief=FLAT)
-  open_file_btn.image = open_file_icon
   open_file_btn.pack(side=LEFT, padx=2, pady=2)
   createToolTip(open_file_btn, "Existing File")
 
   # Save Button
-  global save_btn
   save_btn = Button(toolbar, image=save_icon, command=save, relief=FLAT)
-  save_btn.image = save_icon
   save_btn.pack(side=LEFT, padx=2, pady=2)
   createToolTip(save_btn, "Save")
 
   # Save As Button
-  global save_as_btn
-  save_as_btn = Button(toolbar,image=save_as_icon,command=save_as,relief=FLAT)
-  save_as_btn.image = save_as_icon
+  save_as_btn = Button(toolbar, image=save_as_icon, command=save_as, relief=FLAT)
   save_as_btn.pack(side=LEFT, padx=2, pady=2)
   createToolTip(save_as_btn, "Save As")
 
