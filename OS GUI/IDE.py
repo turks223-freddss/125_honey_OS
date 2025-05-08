@@ -429,7 +429,7 @@ def voice_commands():
         toggle_theme()
       # change theme to light mode
       elif "light mode please" in command_text.lower():
-        is_dark_mode = False
+        is_dark_mode = True
         toggle_theme()
       elif "open the curtains please" in command_text.lower():
         is_dark_mode = False
