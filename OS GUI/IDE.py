@@ -55,7 +55,7 @@ def play_video(path, window_size):
     cv2.imshow('Video', frame)
 
     # Check if 14 seconds have passed
-    if time.time() - start_time > 13:
+    if time.time() - start_time > 1:
       break
 
     if cv2.waitKey(15) & 0xFF == ord('q') or cv2.getWindowProperty(
@@ -75,7 +75,7 @@ Honey_screen = Tk()
 Honey_screen.title('Bluefire IDE')
 file_path = ''
 
-background_image_path = 'OS GUI/assets/background.png'
+background_image_path = 'OS GUI/assets/background2.png'
 
 Honey_screen_width = Honey_screen.winfo_screenwidth()
 Honey_screen_height = Honey_screen.winfo_screenheight()
@@ -96,9 +96,21 @@ background_label.image = bg_photo  #keep a reference
 
 #################### COPIED FUNCTIONS #############################
 #Microphone Activate Commands
+
+def stop_listening():
+    global listening
+    listening = False
+
 def activate_commands():
-  display_voice_command_feedback("Button activated, listening for commands...")
-  voice_commands()
+    # Start listening for commands in a separate thread
+    threading.Thread(target=voice_commands, daemon=True).start()
+
+    mic_btn.config(image=mic_listening_icon)
+    mic_btn.image = mic_listening_icon
+    display_voice_command_feedback("I'm here, dear. What can I do for you?")
+
+    # After a short delay, return the mic button to normal state
+    restore_mic_icon()
 
 
 #Resize Icon
@@ -167,14 +179,6 @@ def createToolTip(widget, text):
 
 ####################################################################
 
-# Microphone Button
-global open_microp_btn
-open_microp_btn = Label(Honey_screen, image=open_microp_icon, bd=0, highlightthickness=0, bg="#FFE144")
-open_microp_btn.image = open_microp_icon
-open_microp_btn.place(x=1100, y=550)
-open_microp_btn.bind("<Button-1>", lambda e: activate_commands())
-createToolTip(open_microp_btn, "Honey")
-
 #Create a custom font
 custom_font = Font(family="Helvetica", size=10, weight="normal")
 
@@ -221,8 +225,7 @@ dark_theme = {
 unsaved_changes = False
 
 #light mode default
-is_dark_mode = TRUE
-
+is_dark_mode = False
 
 def set_file_path(path):
   global file_path
@@ -249,13 +252,17 @@ paste_path = 'OS GUI/assets/clipboard.png'
 cut_path = 'OS GUI/assets/scissors.png'
 undo_path = 'OS GUI/assets/refresh.png'
 redo_path = 'OS GUI/assets/redo.png'
+microphone_path = 'OS GUI/assets/mic.png'
 close_path = 'OS GUI/assets/cross.png'
 minimize_path = 'OS GUI/assets/minimize.png'
 # maximize_path = 'OS GUI/assets/maximize.png'
 background_image_path = 'OS GUI/assets/background.png'
+mic_listen_path = 'OS GUI/assets/mic_listen.png'
 
 new_file_icon = resize_icon(new_file_icon_path, size=(30, 30))
 open_file_icon = resize_icon(open_file_icon_path, size=(30, 30))
+mic_icon = resize_icon(microphone_path, size=(30, 30))
+mic_listening_icon = resize_icon(mic_listen_path, size = (30, 30))
 open_microp_icon = resize_icon(open_microp_path, size=(130, 130))
 save_icon = resize_icon(save_path, size=(30, 30))
 save_as_icon = resize_icon(save_as_path, size=(30, 30))
@@ -358,24 +365,45 @@ def listen_for_commands():
     r.adjust_for_ambient_noise(source)
     print("Say 'Honey' to activate commands...")
     while True:
+      print("Test")
       try:
         audio_data = r.listen(source)
         text = r.recognize_google(audio_data).lower()
         if "honey" in text:
+          print("Honey Test")
+          mic_btn.config(image=mic_listening_icon)
+          mic_btn.image = mic_listening_icon
           display_voice_command_feedback("Yes, dear?")
           voice_commands()  # Call the command processing function
+          stop_listening()
+          mic_btn.config(image=mic_icon)
+          mic_btn.image = mic_icon
+        
+    
       except sr.UnknownValueError:
         pass
       except sr.RequestError as e:
         print(f"Sorry, dear. I unfortunately can't do that... ({e})")
 
 
+def restore_mic_icon():
+    mic_btn.config(image=mic_icon)
+    mic_btn.image = mic_icon
+
+
 def activate_commands():
-  display_voice_command_feedback("I'm here, dear. What can I do for you?")
-  voice_commands()
+    # Start listening for commands in a separate thread
+    threading.Thread(target=voice_commands, daemon=True).start()
+    
+    mic_btn.config(image=mic_listening_icon)
+    mic_btn.image = mic_listening_icon
+    
+    display_voice_command_feedback("I'm here, dear. What can I do for you?")
+
 
 
 def voice_commands():
+  global listening
   global is_dark_mode
   r = sr.Recognizer()
   with sr.Microphone() as source:
@@ -422,18 +450,18 @@ def voice_commands():
         redo_text()
       # change theme to dark mode
       elif "dark mode please" in command_text.lower():
-        is_dark_mode = True
-        toggle_theme()
+        if not is_dark_mode:
+          toggle_theme()
       elif "dark" in command_text.lower():
-        is_dark_mode = True
-        toggle_theme()
+        if not is_dark_mode:
+          toggle_theme()
       # change theme to light mode
       elif "light mode please" in command_text.lower():
-        is_dark_mode = True
-        toggle_theme()
+        if is_dark_mode:
+          toggle_theme()
       elif "open the curtains please" in command_text.lower():
-        is_dark_mode = False
-        toggle_theme()
+        if is_dark_mode:
+          toggle_theme()
       # minimize window
       elif "minimize please" in command_text.lower():
         minimize_window()
@@ -450,6 +478,9 @@ def voice_commands():
     except Exception as e:
       display_voice_command_feedback(
           f"Sorry, dear. I didn't quite get that... ({str(e)})")
+    
+    stop_listening()
+    restore_mic_icon()
 
 
 ############################################################################################
@@ -458,7 +489,7 @@ def voice_commands():
 
 
 def start_listening():
-  open_microp_btn.config()
+  mic_btn.config()
   threading.Thread(target=listen_for_commands, daemon=True).start()
 
 
@@ -653,6 +684,8 @@ def create_toolbar_top():
   global toolbar
   toolbar = Frame(Honey_screen, relief=FLAT)
 
+
+
   # New File Button
   new_file_btn = Button(toolbar, image=new_file_icon, command=open_new_file, relief=FLAT)
   new_file_btn.image = new_file_icon
@@ -728,6 +761,7 @@ def create_toolbar_top():
   min_btn.pack(side="right", padx=2, pady=2)
   createToolTip(min_btn, "Minimize")
 
+
   # Maximize Button
   # global max_btn
   # max_btn = Button(toolbar, image=maximize_icon, command=maximize_window, relief=FLAT)
@@ -742,6 +776,15 @@ def create_toolbar_top():
 
   toolbar.pack(side=TOP, fill=X)
 
+
+  
+  
+  #Mic Button
+  global mic_btn
+  mic_btn = Button(toolbar, image=mic_icon, command=activate_commands, relief=FLAT)
+  mic_btn.image = mic_icon
+  mic_btn.pack (side="right", padx=2, pady=2)
+  createToolTip(mic_btn, "Listen")
 
 ############################################################################################
 ######                                                               ######
