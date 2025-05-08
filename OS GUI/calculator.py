@@ -1,71 +1,99 @@
-import pygame
+import tkinter as tk
 
-class Calculator:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.width = 300
-        self.height = 320
-        self.rect = pygame.Rect(x, y, self.width, self.height)
-        self.font = pygame.font.SysFont(None, 36)
-        self.input = ""
-        self.buttons = self.create_buttons()
+class CalculatorWidget(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.input_var = tk.StringVar()
+        self.create_widgets()
 
-    def create_buttons(self):
-        buttons = []
-        labels = [
+    def create_widgets(self):
+        # Entry field
+        entry = tk.Entry(self, textvariable=self.input_var, font=('Arial', 18), justify='right', bd=5, relief=tk.RIDGE)
+        entry.grid(row=0, column=0, columnspan=4, sticky='nsew', padx=5, pady=5)
+
+        # Button labels
+        buttons = [
             ['7', '8', '9', '/'],
             ['4', '5', '6', '*'],
-            ['1', '2', '3','+'],
-            ['0', 'C', '=', '-']
+            ['1', '2', '3', '+'],
+            ['C', '0', '=', '-']
         ]
-        button_w = 60
-        button_h = 50
-        gap = 10
 
-        for row_index, row in enumerate(labels):
-            for col_index, label in enumerate(row):
-                bx = self.x + col_index * (button_w + gap) + 10
-                by = self.y + row_index * (button_h + gap) + 80
-                rect = pygame.Rect(bx, by, button_w, button_h)
-                buttons.append((rect, label))
-        return buttons
+        # Create buttons
+        for row_idx, row in enumerate(buttons):
+            for col_idx, label in enumerate(row):
+                button = tk.Button(self, text=label, font=('Arial', 16), width=4, height=2,
+                                   command=lambda l=label: self.on_button_click(l))
+                button.grid(row=row_idx + 1, column=col_idx, sticky='nsew', padx=2, pady=2)
 
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            mouse_pos = event.pos
-            for rect, label in self.buttons:
-                if rect.collidepoint(mouse_pos):
-                    if label == 'C':
-                        self.input = ''
-                    elif label == '=':
-                        try:
-                            self.input = str(eval(self.input))
-                        except Exception:
-                            self.input = 'Error'
-                    else:
-                        self.input += label
+        # Make grid cells expand
+        for i in range(4):
+            self.columnconfigure(i, weight=1)
+        for i in range(5):
+            self.rowconfigure(i, weight=1)
 
-    def draw(self, screen):
-        # Draw calculator background
-        pygame.draw.rect(screen, (180, 180, 180), self.rect, border_radius=10)
-
-        # Draw input display
-        display_rect = pygame.Rect(self.x + 10, self.y + 10, self.width - 20, 50)
-        pygame.draw.rect(screen, (255, 255, 255), display_rect)
-        text_surf = self.font.render(self.input, True, (0, 0, 0))
-        screen.blit(text_surf, (display_rect.x + 10, display_rect.y + 10))
-
-        # Draw buttons
-        for rect, label in self.buttons:
-            pygame.draw.rect(screen, (220, 220, 220), rect)
-            pygame.draw.rect(screen, (100, 100, 100), rect, 2)
-            label_surf = self.font.render(label, True, (0, 0, 0))
-            label_rect = label_surf.get_rect(center=rect.center)
-            screen.blit(label_surf, label_rect)
-        
-    def remove_buttons(self):
-        self.buttons = []
+    def on_button_click(self, label):
+        if label == 'C':
+            self.input_var.set('')
+        elif label == '=':
+            try:
+                result = str(eval(self.input_var.get()))
+                self.input_var.set(result)
+            except Exception:
+                self.input_var.set('Error')
+        else:
+            self.input_var.set(self.input_var.get() + label)
     
-    def restore_buttons(self):
-        self.buttons = self.create_buttons()
+   
+    def set_input_from_string(self, input_string):
+        word_to_symbol = {
+            'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+            'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
+            'ten': '10', 'eleven': '11', 'twelve': '12', 'thirteen': '13',
+            'fourteen': '14', 'fifteen': '15', 'sixteen': '16', 'seventeen': '17',
+            'eighteen': '18', 'nineteen': '19', 'twenty': '20', 'thirty': '30',
+            'forty': '40', 'fifty': '50', 'sixty': '60', 'seventy': '70',
+            'eighty': '80', 'ninety': '90',
+            'plus': '+', 'add': '+', 'minus': '-', 'subtract': '-',
+            'times': '*', 'multiplied': '*', 'multiply': '*',
+            'divided': '/', 'divide': '/', 'over': '/'
+        }
+
+        allowed_chars = '0123456789+-*/(). '
+
+        # ✅ First: check if input_string already looks like numbers/operators
+        if all(char in allowed_chars for char in input_string):
+            self.input_var.set(input_string)
+            return
+
+        # ✅ Second: handle word-based input
+        words = input_string.lower().split()
+        result_parts = []
+
+        i = 0
+        while i < len(words):
+            word = words[i]
+            # Handle compound numbers like "thirty seven"
+            if word in ['twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety']:
+                if i + 1 < len(words) and words[i + 1] in word_to_symbol and int(word_to_symbol[words[i + 1]]) < 10:
+                    combined = int(word_to_symbol[word]) + int(word_to_symbol[words[i + 1]])
+                    result_parts.append(str(combined))
+                    i += 2
+                    continue
+                else:
+                    result_parts.append(word_to_symbol[word])
+            elif word in word_to_symbol:
+                result_parts.append(word_to_symbol[word])
+            else:
+                # 🚨 If unknown word, error out
+                self.input_var.set('Error')
+                return
+            i += 1
+
+        final_expr = ' '.join(result_parts)
+
+        # ✅ Final check: make sure no invalid characters slipped in
+        if all(char in allowed_chars for char in final_expr):
+            self.input_var.set(final_expr)
+        else:
+            self.input_var.set('Error')
