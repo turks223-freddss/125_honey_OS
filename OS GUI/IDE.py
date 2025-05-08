@@ -282,11 +282,12 @@ minimize_icon = resize_icon(minimize_path, size=(15, 15))
 
 def close_window():
   # global file_path
-
-  code = editor.get('1.0', END).strip()
-  if code:
-    tkinter.messagebox.showerror("Unable to Save", "Do you want to save changes?")
-    save()
+  if isEditorActive == 1:
+    code = editor.get('1.0', END).strip()
+    if code:
+      tkinter.messagebox.showerror("Unable to Save", "Do you want to save changes?")
+      save()
+      Honey_screen.destroy()
   Honey_screen.destroy()
 
 
@@ -474,6 +475,8 @@ def voice_commands():
         close_window()
       elif"yamete" in command_text.lower():
         close_window()
+      elif"editor" in command_text.lower():
+        toggleEditor()
 
     except Exception as e:
       display_voice_command_feedback(
@@ -606,8 +609,21 @@ def save_as():
   unsaved_changes = False
 
 
-def hide_editor(event=None):
-  editor.pack_forget()  # This hides the editor widget
+def toggleEditor():
+    global isEditorActive
+    global editor
+    
+    if isEditorActive == 1:
+      isEditorActive = 0
+    else:
+      isEditorActive = 1
+      
+    if isEditorActive == 1:
+        editor = Text(Honey_screen, undo=True, relief=FLAT)
+        editor.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
+        editor.bind('<Key>', check_text_and_toggle_buttons)
+    else:
+        editor.destroy()  # removes the widget completely
 
 
 def cut_text():
@@ -776,15 +792,19 @@ def create_toolbar_top():
 
   toolbar.pack(side=TOP, fill=X)
 
-
-  
-  
   #Mic Button
   global mic_btn
   mic_btn = Button(toolbar, image=mic_icon, command=activate_commands, relief=FLAT)
   mic_btn.image = mic_icon
   mic_btn.pack (side="right", padx=2, pady=2)
   createToolTip(mic_btn, "Listen")
+  #editor button
+  
+  global editor_btn
+  editor_btn = Button(toolbar, image=new_file_icon, command=toggleEditor, relief=FLAT)
+  editor_btn.image = new_file_icon
+  editor_btn.pack (side="right", padx=2, pady=2)
+  createToolTip(editor_btn, "Editor")
 
 ############################################################################################
 ######                                                               ######
@@ -799,10 +819,12 @@ voice_command_feedback.config()
 
 screen_height = Honey_screen.winfo_screenheight()
 
-global editor
-editor = Text(Honey_screen, undo=True, relief=FLAT)
-editor.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
-editor.bind('<Key>', check_text_and_toggle_buttons)
+isEditorActive = 0
+if isEditorActive == 1:
+  global editor
+  editor = Text(Honey_screen, undo=True, relief=FLAT)
+  editor.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
+  editor.bind('<Key>', check_text_and_toggle_buttons)
 
 disabled_buttons(DISABLED)
 enable_buttons(DISABLED)
