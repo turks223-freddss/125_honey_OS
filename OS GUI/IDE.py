@@ -15,6 +15,8 @@ import wave
 import cv2
 import time
 from bluefire_ide import file_operations, file_state, main, ui_elements, runner, editor_actions
+from calculator import CalculatorWidget
+
 
 
 def play_video(path, window_size):
@@ -254,6 +256,7 @@ minimize_path = 'OS GUI/assets/minimize.png'
 # maximize_path = 'OS GUI/assets/maximize.png'
 background_image_path = 'OS GUI/assets/background.png'
 mic_listen_path = 'OS GUI/assets/mic_listen.png'
+calculator_icon_path = 'OS GUI/assets/Calculator.png'
 
 new_file_icon = resize_icon(new_file_icon_path, size=(30, 30))
 open_file_icon = resize_icon(open_file_icon_path, size=(30, 30))
@@ -267,6 +270,7 @@ paste_icon = resize_icon(paste_path, size=(30, 30))
 cut_icon = resize_icon(cut_path, size=(30, 30))
 undo_icon = resize_icon(undo_path, size=(30, 30))
 redo_icon = resize_icon(redo_path, size=(30, 30))
+calculator_icon = resize_icon(calculator_icon_path, size = (30,30))
 close_icon = resize_icon(close_path, size=(15, 15))
 minimize_icon = resize_icon(minimize_path, size=(15, 15))
 # maximize_icon = resize_icon(maximize_path, size=(15, 15))
@@ -278,11 +282,12 @@ minimize_icon = resize_icon(minimize_path, size=(15, 15))
 
 def close_window():
   # global file_path
-
-  code = editor.get('1.0', END).strip()
-  if code:
-    tkinter.messagebox.showerror("Unable to Save", "Do you want to save changes?")
-    save()
+  if isEditorActive == 1:
+    code = editor.get('1.0', END).strip()
+    if code:
+      tkinter.messagebox.showerror("Unable to Save", "Do you want to save changes?")
+      save()
+      Honey_screen.destroy()
   Honey_screen.destroy()
 
 
@@ -414,7 +419,12 @@ def voice_commands():
       ############################################################################################
 
       # open a new file
-      if "new file please" in command_text.lower():
+      if isCalculatorActive == 1:
+        if "calculator" in command_text.lower():
+          toggleCalculator()
+        else:  
+          calculator.set_input_from_string(command_text.lower())
+      elif "new file please" in command_text.lower():
         open_new_file()
       # open an existing file
       elif "existing file please" in command_text.lower():
@@ -470,6 +480,11 @@ def voice_commands():
         close_window()
       elif"yamete" in command_text.lower():
         close_window()
+      elif"editor" in command_text.lower():
+        toggleEditor()
+      elif"calculator" in command_text.lower():
+        toggleCalculator()
+      
 
     except Exception as e:
       display_voice_command_feedback(
@@ -554,9 +569,35 @@ def save_as():
   file_operations.save_as(editor)
 
 
-def hide_editor(event=None):
-  editor.pack_forget()  # This hides the editor widget
+def toggleEditor():
+    global isEditorActive
+    global editor
+    
+    if isEditorActive == 1:
+      isEditorActive = 0
+    else:
+      isEditorActive = 1
+      
+    if isEditorActive == 1:
+        editor = Text(Honey_screen, undo=True, relief=FLAT)
+        editor.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
+        editor.bind('<Key>', check_text_and_toggle_buttons)
+    else:
+        editor.destroy()  # removes the widget completely
 
+def toggleCalculator():
+  global isCalculatorActive, calculator
+  if isCalculatorActive == 1:
+    isCalculatorActive = 0
+  else:
+    isCalculatorActive = 1
+  
+  if isCalculatorActive == 1:
+    calculator = CalculatorWidget(Honey_screen)
+    calculator.pack(side=RIGHT, fill=BOTH, expand=False, padx=10, pady=20)
+  else:
+    calculator.destroy()
+  
 
 cut_text = lambda: editor_actions.cut(editor)
 copy_text = lambda: editor_actions.copy(editor)
@@ -703,15 +744,26 @@ def create_toolbar_top():
 
   toolbar.pack(side=TOP, fill=X)
 
-
-  
-  
   #Mic Button
   global mic_btn
   mic_btn = Button(toolbar, image=mic_icon, command=activate_commands, relief=FLAT)
   mic_btn.image = mic_icon
   mic_btn.pack (side="right", padx=2, pady=2)
   createToolTip(mic_btn, "Listen")
+  #editor button
+  
+  global editor_btn
+  editor_btn = Button(toolbar, image=new_file_icon, command=toggleEditor, relief=FLAT)
+  editor_btn.image = new_file_icon
+  editor_btn.pack (side="right", padx=2, pady=2)
+  createToolTip(editor_btn, "Editor")
+  
+  global calculator_btn
+  calculator_btn = Button(toolbar, image=calculator_icon, command=toggleCalculator, relief=FLAT)
+  calculator_btn.image = calculator_icon
+  calculator_btn.pack (side="right", padx=2, pady=2)
+  createToolTip(calculator_btn, "calculator")
+  
 
 ############################################################################################
 ######                                                               ######
@@ -726,10 +778,18 @@ voice_command_feedback.config()
 
 screen_height = Honey_screen.winfo_screenheight()
 
-global editor
-editor = Text(Honey_screen, undo=True, relief=FLAT)
-editor.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
-editor.bind('<Key>', check_text_and_toggle_buttons)
+isEditorActive = 0
+isCalculatorActive = 0
+if isEditorActive == 1:
+  global editor
+  editor = Text(Honey_screen, undo=True, relief=FLAT)
+  editor.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
+  editor.bind('<Key>', check_text_and_toggle_buttons)
+
+if isCalculatorActive == 1:
+  calculator = CalculatorWidget(Honey_screen)
+  calculator.pack(side=RIGHT, fill=BOTH, expand=False, padx=10, pady=20)
+
 
 disabled_buttons(DISABLED)
 enable_buttons(DISABLED)
