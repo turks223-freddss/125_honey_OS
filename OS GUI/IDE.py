@@ -16,6 +16,8 @@ import cv2
 import time
 from bluefire_ide import file_operations, file_state, main, ui_elements, runner, editor_actions
 from calculator import CalculatorWidget
+from camera import CameraViewer
+
 
 
 
@@ -77,6 +79,7 @@ play_video(video_path, window_size)
 Honey_screen = Tk()
 Honey_screen.title('Bluefire IDE')
 file_path = ''
+camera_viewer = CameraViewer(Honey_screen)
 
 background_image_path = 'OS GUI/assets/background2.png'
 
@@ -257,6 +260,7 @@ minimize_path = 'OS GUI/assets/minimize.png'
 background_image_path = 'OS GUI/assets/background.png'
 mic_listen_path = 'OS GUI/assets/mic_listen.png'
 calculator_icon_path = 'OS GUI/assets/Calculator.png'
+camera_icon_path = 'OS GUI/assets/camera_icon.png'
 
 new_file_icon = resize_icon(new_file_icon_path, size=(30, 30))
 open_file_icon = resize_icon(open_file_icon_path, size=(30, 30))
@@ -267,6 +271,7 @@ save_icon = resize_icon(save_path, size=(30, 30))
 save_as_icon = resize_icon(save_as_path, size=(30, 30))
 copy_icon = resize_icon(copy_icon_path, size=(30, 30))
 paste_icon = resize_icon(paste_path, size=(30, 30))
+camera_icon = resize_icon(camera_icon_path, size=(30, 30))
 cut_icon = resize_icon(cut_path, size=(30, 30))
 undo_icon = resize_icon(undo_path, size=(30, 30))
 redo_icon = resize_icon(redo_path, size=(30, 30))
@@ -701,6 +706,8 @@ def create_toolbar_top():
   cut_btn.pack(side=LEFT, padx=2, pady=2)
   createToolTip(cut_btn, "Cut")
 
+  
+
   # Undo Button
   global undo_btn
   undo_btn = Button(toolbar, image=redo_icon, command=undo_text, relief=FLAT)
@@ -714,6 +721,9 @@ def create_toolbar_top():
   redo_btn.image = undo_icon
   redo_btn.pack(side=LEFT, padx=2, pady=2)
   createToolTip(redo_btn, "Redo")
+
+ 
+
 
   # Exit Button
   global close_btn
@@ -763,7 +773,13 @@ def create_toolbar_top():
   calculator_btn.image = calculator_icon
   calculator_btn.pack (side="right", padx=2, pady=2)
   createToolTip(calculator_btn, "calculator")
-  
+
+  #Camera Button
+  global camera_btn
+  camera_btn = Button(toolbar, image=camera_icon, command=camera_viewer.open_camera, relief=FLAT)
+  camera_btn.image = camera_icon  # Keep a reference to prevent garbage collection
+  camera_btn.pack(side="right", padx=2, pady=2)
+  createToolTip(camera_btn, "Open Camera")
 
 ############################################################################################
 ######                                                               ######
