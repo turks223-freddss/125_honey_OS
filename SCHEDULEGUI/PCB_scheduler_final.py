@@ -130,7 +130,7 @@ class SchedulerSim(QtWidgets.QWidget):
             except:
                 continue
 
-        self.table.setRowCount(0)
+        
         self.sim_time = 0
         self.sim_done = []
         self.sim_queue = deque()
@@ -155,12 +155,12 @@ class SchedulerSim(QtWidgets.QWidget):
     def simulate_step(self):
         self.sim_time += 1
 
-        # Add newly arriving processes
+        # Add newly arriving processes to queue
         arrivals = [p for p in self.sim_processes if p["at"] == self.sim_time - 1]
         for p in arrivals:
             self.sim_queue.append(p)
 
-        # Try to start new processes if enough memory
+        # Try to allocate memory and start processes from queue
         new_queue = deque()
         for p in self.sim_queue:
             mem_needed = p["mem"]
@@ -170,22 +170,26 @@ class SchedulerSim(QtWidgets.QWidget):
                 p["mem_allocated"] = True
                 self.running_processes.append(p)
             else:
-                new_queue.append(p)
+                new_queue.append(p)  # Not enough memory, stay in queue
         self.sim_queue = new_queue
 
-        # Run all currently running processes
+        # Run all running processes (simulate concurrency)
         finished = []
         for p in self.running_processes:
+            # For RR and SRPT, implement logic here if needed (else assume all run)
             p["remaining"] -= 1
             if p["remaining"] <= 0:
                 finished.append(p)
 
+        # Finish processes and free memory
         for p in finished:
             self.finish_process(p)
             self.running_processes.remove(p)
 
         self.update_gui_table()
-        self.setWindowTitle(f"Time: {self.sim_time} | Running: {', '.join(p['pid'] for p in self.running_processes) if self.running_processes else 'Idle'}")
+
+        running_pids = ', '.join(p['pid'] for p in self.running_processes) if self.running_processes else 'Idle'
+        self.setWindowTitle(f"Time: {self.sim_time} | Running: {running_pids}")
 
         if len(self.sim_done) == len(self.sim_processes):
             self.sim_timer.stop()
