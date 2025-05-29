@@ -1,8 +1,72 @@
+
+import tkinter as tk
+from calculator import CalculatorWidget  # Adjust if you named it differently
+
 def open_editor():
     print("Editor opened!")
 
+
+# Globals (you can also use a better state manager if desired)
+isCalculatorActive = False
+calculator = None
+Honey_screen = None  # You will assign this from your main IDE
+
 def open_calculator():
-    print("Calculator opened!")
+    global isCalculatorActive, calculator, Honey_screen
+
+    if isCalculatorActive:
+        return  # Do nothing if already open
+
+    calculator = tk.Toplevel(Honey_screen)
+    calculator.overrideredirect(True)
+    calculator.geometry("250x300+100+100")
+
+    # === Header Frame ===
+    header = tk.Frame(calculator, bg="gray20")
+    header.pack(fill="x")
+
+    # Title Label
+    title = tk.Label(header, text="Calculator", fg="white", bg="gray20", font=("Arial", 10, "bold"))
+    title.pack(side="left", padx=5)
+
+    # Close Button
+    def on_close():
+        global isCalculatorActive, calculator
+        isCalculatorActive = False
+        calculator.destroy()
+        calculator = None
+
+    close_button = tk.Button(
+        header, text="✖", command=on_close,
+        bg="red", fg="white", font=("Arial", 10, "bold"),
+        bd=0, cursor="hand2"
+    )
+    close_button.pack(side="right", padx=5, pady=2)
+
+    # === Make Window Draggable by Header ===
+    def start_move(event):
+        calculator.x = event.x
+        calculator.y = event.y
+
+    def do_move(event):
+        x = calculator.winfo_x() + event.x - calculator.x
+        y = calculator.winfo_y() + event.y - calculator.y
+        calculator.geometry(f"+{x}+{y}")
+
+    header.bind("<ButtonPress-1>", start_move)
+    header.bind("<B1-Motion>", do_move)
+
+    # === Calculator Content ===
+    widget = CalculatorWidget(calculator)
+    widget.pack(fill=tk.BOTH, expand=True)
+
+    isCalculatorActive = True
+
+
+def set_main_screen(screen):
+    """Call this from IDE.py to inject the main window reference."""
+    global Honey_screen
+    Honey_screen = screen
 
 def open_files():
     print("Files opened!")

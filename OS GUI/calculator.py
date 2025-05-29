@@ -23,7 +23,7 @@ class CalculatorWidget(tk.Frame):
         for row_idx, row in enumerate(buttons):
             for col_idx, label in enumerate(row):
                 button = tk.Button(self, text=label, font=('Arial', 16), width=4, height=2,
-                                   command=lambda l=label: self.on_button_click(l))
+                command=lambda l=label: self.on_button_click(l))
                 button.grid(row=row_idx + 1, column=col_idx, sticky='nsew', padx=2, pady=2)
 
         # Make grid cells expand
