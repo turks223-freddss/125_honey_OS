@@ -108,6 +108,9 @@ class VoiceController:
                     self.toolbar.commands["toggleEditor"]()
                 elif"open simulation" in command_text:
                     apps.open_simulator()
+                    print("hello")
+                elif"close simulation" in command_text:
+                    apps.close_simulator()
                 elif"open calculator" in command_text:
                     apps.open_calculator()
                 elif"take picture" in command_text:
