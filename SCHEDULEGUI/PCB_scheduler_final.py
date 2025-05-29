@@ -31,58 +31,58 @@ class SchedulerSim(QtWidgets.QWidget):
         
         
     def setup_ui(self):
-        layout = QtWidgets.QVBoxLayout(self)
+        main_layout = QtWidgets.QHBoxLayout(self)  # Horizontal main layout
 
+        left_layout = QtWidgets.QVBoxLayout()
+        main_layout.addLayout(left_layout, stretch=3)  # left side bigger
+
+        # Move all your current widgets except memory_table into left_layout:
         self.table = QtWidgets.QTableWidget(10, 4)
         self.table.setHorizontalHeaderLabels(["PID", "Arrival Time", "Burst Time", "Memory"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        layout.addWidget(QtWidgets.QLabel("Enter Process Data:"))
-        layout.addWidget(self.table)
+        left_layout.addWidget(QtWidgets.QLabel("Enter Process Data:"))
+        left_layout.addWidget(self.table)
 
-        self.memory_table = QtWidgets.QTableWidget(1, self.total_blocks)
-        self.memory_table.setFixedHeight(50)
-        self.memory_table.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.memory_table.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.memory_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-        self.memory_table.setVerticalHeaderLabels(["Memory Blocks"])
-        self.memory_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.memory_table.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.memory_table.setHorizontalHeaderLabels([str(i) for i in range(self.total_blocks)])
-        self.memory_table.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
-
-        # Add memory_table to the layout after timeline_container
-        self.layout().addWidget(QtWidgets.QLabel("Memory Allocation:"))
-        self.layout().addWidget(self.memory_table)
-        
-        
         self.algorithm_box = QtWidgets.QComboBox()
         self.algorithm_box.addItems(["First Come First Serve", "Shortest Job First", "Round Robin", "SRPT"])
-        layout.addWidget(QtWidgets.QLabel("Select Scheduling Algorithm:"))
-        layout.addWidget(self.algorithm_box)
+        left_layout.addWidget(QtWidgets.QLabel("Select Scheduling Algorithm:"))
+        left_layout.addWidget(self.algorithm_box)
 
         self.quantum_input = QtWidgets.QLineEdit("2")
-        layout.addWidget(QtWidgets.QLabel("Time Quantum (Only for RR):"))
-        layout.addWidget(self.quantum_input)
+        left_layout.addWidget(QtWidgets.QLabel("Time Quantum (Only for RR):"))
+        left_layout.addWidget(self.quantum_input)
 
         self.start_button = QtWidgets.QPushButton("Simulate")
         self.start_button.clicked.connect(self.simulate)
-        layout.addWidget(self.start_button)
+        left_layout.addWidget(self.start_button)
 
         self.result_table = QtWidgets.QTableWidget()
         self.result_table.setColumnCount(6)
         self.result_table.setHorizontalHeaderLabels(["PID", "AT", "BT", "CT", "TAT", "WT"])
         self.result_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        layout.addWidget(QtWidgets.QLabel("Result:"))
-        layout.addWidget(self.result_table)
+        left_layout.addWidget(QtWidgets.QLabel("Result:"))
+        left_layout.addWidget(self.result_table)
 
-        # Visual timeline
-        layout.addWidget(QtWidgets.QLabel("Simulation Timeline:"))
+        left_layout.addWidget(QtWidgets.QLabel("Simulation Timeline:"))
         self.timeline_container = QtWidgets.QScrollArea()
         self.timeline_widget = QtWidgets.QWidget()
         self.timeline_layout = QtWidgets.QHBoxLayout(self.timeline_widget)
         self.timeline_container.setWidgetResizable(True)
         self.timeline_container.setWidget(self.timeline_widget)
-        layout.addWidget(self.timeline_container)
+        left_layout.addWidget(self.timeline_container)
+
+        # Now the memory table on the right, vertically:
+        self.memory_table = QtWidgets.QTableWidget(self.total_blocks, 1)  # rows = blocks, cols = 1
+        self.memory_table.setFixedWidth(200)
+        self.memory_table.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.memory_table.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.memory_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.memory_table.setHorizontalHeaderLabels(["Mem Blocks"])
+        self.memory_table.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.memory_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.memory_table.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
+
+        main_layout.addWidget(self.memory_table, stretch=1)
 
     def simulate(self):
         self.sim_processes = []
@@ -279,15 +279,14 @@ class SchedulerSim(QtWidgets.QWidget):
                 self.memory_blocks[i] = None
 
     def update_memory_table(self):
-        for col in range(self.total_blocks):
-            pid = self.memory_blocks[col]
+        for row in range(self.total_blocks):
+            pid = self.memory_blocks[row]
             item = QTableWidgetItem(pid if pid else "")
-            # Color based on pid or free
             if pid:
                 item.setBackground(QtGui.QColor(self.get_color(pid)))
             else:
                 item.setBackground(QtGui.QColor("#FFFFFF"))
-            self.memory_table.setItem(0, col, item)
+            self.memory_table.setItem(row, 0, item)
 
     def finish_process(self):
         self.free_memory(self.current_process["pid"])
