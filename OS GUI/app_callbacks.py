@@ -1,6 +1,10 @@
 
+import subprocess
+import os
+import sys
 import tkinter as tk
 from calculator import CalculatorWidget  # Adjust if you named it differently
+
 from camera import CameraViewer
 
 Honey_screen = None  # You will assign this from your main IDE
@@ -8,6 +12,8 @@ def set_main_screen(screen):
     """Call this from IDE.py to inject the main window reference."""
     global Honey_screen
     Honey_screen = screen
+
+
 
 def open_editor():
     print("Editor opened!")
@@ -77,6 +83,17 @@ def open_calculator():
 
 
 
+
+def open_simulator():
+    simulator_path = os.path.join(os.path.dirname(__file__), '..', 'SCHEDULEGUI', 'PCB_scheduler_final.py')
+    simulator_path = os.path.abspath(simulator_path)  # Ensure full path
+    subprocess.Popen([sys.executable, simulator_path])
+
+
+def set_main_screen(screen):
+    """Call this from IDE.py to inject the main window reference."""
+    global Honey_screen
+    Honey_screen = screen
 
 def open_files():
     print("Files opened!")

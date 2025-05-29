@@ -323,7 +323,10 @@ desktop.pack(fill="both", expand=True)
 
 desktop.add_icon("File Editor", "OS GUI/assets/new_file.png", toggleEditor, (0, 0))
 desktop.add_icon("Calculator", "OS GUI/assets/calculator.png", apps.open_calculator, (100, 0))
+
 desktop.add_icon("Camera", "OS GUI/assets/camera_icon.png", apps.open_camera, (0, 100))
+desktop.add_icon("Simulation", "OS GUI/assets/existing_file.png", apps.open_simulator, (0, 100))
+
 
 desktop.bind("<Button-1>", lambda e: DesktopIcon.selected_icon and DesktopIcon.selected_icon.deselect())
 

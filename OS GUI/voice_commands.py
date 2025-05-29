@@ -1,5 +1,6 @@
 import threading
 import speech_recognition as sr
+import app_callbacks as apps
 
 class VoiceController:
     def __init__(self, toolbar, icons, mic_icon, mic_listening_icon,
@@ -105,6 +106,9 @@ class VoiceController:
                     self.toolbar.commands["toggleEditor"]()
                 elif "calculator" in command_text:
                     self.toolbar.commands["toggleCalculator"]()
+                elif"open simulation" in command_text:
+                    apps.open_simulator
+                    print("hello")
 
             except sr.WaitTimeoutError:
                 self.display_feedback_safe("You were a little quiet, dear. Try again?")
