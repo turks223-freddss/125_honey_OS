@@ -24,6 +24,10 @@ from iconpaths import icon
 from resize import resize_icon
 from toolbar import ToolbarTop, ToolbarEditor
 from voice_commands import VoiceController
+from taskbar import Taskbar
+from desktop import Desktop
+import app_callbacks as apps
+from voicewidget import VoiceAssistantWidget
 
 honeyBoot = StartUp(
         path="OS GUI/assets/Final.mp4",  # Adjust path if needed
@@ -35,8 +39,7 @@ honeyBoot.play()
 
 
 Honey_screen = Tk()
-Honey_screen.title('Bluefire IDE')
-file_path = ''
+Honey_screen.title('Ikiyo')
 camera_viewer = CameraViewer(Honey_screen)
 background_image_path = 'OS GUI/assets/background2.png'
 Honey_screen_width = Honey_screen.winfo_screenwidth()
@@ -54,6 +57,8 @@ bg_photo = ImageTk.PhotoImage(bg_image)
 background_label = Label(Honey_screen, image=bg_photo)
 background_label.place(x=0, y=0, relwidth=1, relheight=1)
 background_label.image = bg_photo  #keep a reference
+
+
 
 editor = None
 calculator = None
@@ -253,21 +258,6 @@ def minimize_window():
   Honey_screen.iconify()
 
 
-# def maximize_window():
-#     Honey_screen.state('zoomed')
-
-
-
-def display_voice_command_feedback(text):
-  # Clear previous feedback
-  voice_command_feedback.config(state=NORMAL)
-  voice_command_feedback.delete('1.0', END)
-
-  # Display new feedback
-  voice_command_feedback.insert('1.0', text)
-  voice_command_feedback.config(state=DISABLED)
-
-
 ############################################################################################
 ######                                                               ######
 ############################################################################################
@@ -324,22 +314,41 @@ toolbar = ToolbarTop(
 )
 toolbar.pack(side="top", fill="x")
 
+desktop = Desktop(Honey_screen, grid_size=75)
+desktop.pack(fill="both", expand=True)
+
+
+
+desktop.add_icon("Editor", "OS GUI/assets/cross.png", apps.open_editor, (0, 0))
+desktop.add_icon("Calculator", "OS GUI/assets/cross.png", apps.open_calculator, (100, 0))
+desktop.add_icon("Files", "OS GUI/assets/cross.png", apps.open_files, (0, 100))
+
+
+voice_widget = VoiceAssistantWidget(desktop, font_size=12, button_command=lambda: None,mic_icon=icons["mic"])
+desktop.add_widget(voice_widget, width=600, height=80)
+voice_widget.show_feedback("Say 'Honey' to activate commands...")
+
 # Step 2: Now create voice_controller with toolbar available
 voice_controller = VoiceController(
     toolbar=toolbar,
     icons=icons,
     mic_icon=icons["microphone"],
     mic_listening_icon=icons["mic_listen"],
-    display_feedback=display_voice_command_feedback,
+    display_feedback=voice_widget.show_feedback,
     calculator=calculator,
     editor=editor,
     is_calculator_active=isCalculatorActive,
     is_dark_mode=is_dark_mode
 )
+voice_widget.action_button.config(command=voice_controller.activate_commands)
+
+voice_controller.start_listening()
 
 # Step 3: Update the command binding now that voice_controller exists
 toolbar.commands["activate_commands"] = voice_controller.activate_commands
 
+taskbar = Taskbar(Honey_screen, apps=[])
+taskbar.pack(side="bottom", fill="x")
 
 ############################################################################################
 ######                              DICTIONARY                          ######
@@ -374,10 +383,10 @@ dark_theme = {
 # A flag to help keep track of the buttons
 unsaved_changes = False
 
-
 def set_file_path(path):
   global file_path
   file_path = path
+
 
 ############################################################################################
 ######                      TOOLBAR  |  BUTTONS                       ######
@@ -388,13 +397,13 @@ voice_command_feedback = Text(Honey_screen, height=3, font = Font(family="Courie
 voice_command_feedback.pack(side=BOTTOM, fill=X)
 voice_command_feedback.config()
 
+
 screen_height = Honey_screen.winfo_screenheight()
 
-# Start the passive listener
-voice_controller.start_listening()
 
 # Optionally bind to button
 toolbar.mic_btn.config(command=voice_controller.activate_commands)
+
 
 Honey_screen.attributes('-fullscreen', True)
 # Honey_screen.config(bg='#FFCF81')
