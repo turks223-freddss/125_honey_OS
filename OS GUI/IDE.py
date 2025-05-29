@@ -23,6 +23,9 @@ from iconpaths import icon
 from resize import resize_icon
 from toolbar import ToolbarTop
 from voice_commands import VoiceController
+from taskbar import Taskbar
+from desktop import Desktop
+import app_callbacks as apps
 
 honeyBoot = StartUp(
         path="OS GUI/assets/Final.mp4",  # Adjust path if needed
@@ -34,8 +37,7 @@ honeyBoot.play()
 
 
 Honey_screen = Tk()
-Honey_screen.title('Bluefire IDE')
-file_path = ''
+Honey_screen.title('Ikiyo')
 camera_viewer = CameraViewer(Honey_screen)
 background_image_path = 'OS GUI/assets/background2.png'
 Honey_screen_width = Honey_screen.winfo_screenwidth()
@@ -53,6 +55,8 @@ bg_photo = ImageTk.PhotoImage(bg_image)
 background_label = Label(Honey_screen, image=bg_photo)
 background_label.place(x=0, y=0, relwidth=1, relheight=1)
 background_label.image = bg_photo  #keep a reference
+
+
 
 editor = None
 calculator = None
@@ -350,6 +354,11 @@ toolbar = ToolbarTop(
 )
 toolbar.pack(side="top", fill="x")
 
+desktop = Desktop(Honey_screen, grid_size=75)
+desktop.pack(fill="both", expand=True)
+
+
+
 # Step 2: Now create voice_controller with toolbar available
 voice_controller = VoiceController(
     toolbar=toolbar,
@@ -366,6 +375,8 @@ voice_controller = VoiceController(
 # Step 3: Update the command binding now that voice_controller exists
 toolbar.commands["activate_commands"] = voice_controller.activate_commands
 
+taskbar = Taskbar(Honey_screen, apps=[])
+taskbar.pack(side="bottom", fill="x")
 
 ############################################################################################
 ######                              DICTIONARY                          ######
@@ -400,20 +411,9 @@ dark_theme = {
 # A flag to help keep track of the buttons
 unsaved_changes = False
 
-
 def set_file_path(path):
   global file_path
   file_path = path
-
-
-############################################################################################
-######                                                               ######
-############################################################################################
-
-############################################################################################
-######                                                               ######
-############################################################################################
-
 
 # Enables the button once it notice text in the editor
 def check_text_and_toggle_buttons(event=None):
@@ -423,14 +423,6 @@ def check_text_and_toggle_buttons(event=None):
     unsaved_changes = True
   else:
     unsaved_changes = False
-
-
-
-
-############################################################################################
-######                      TOOLBAR  |  BUTTONS                       ######
-############################################################################################
-
 
 # Voice command feedback area
 voice_command_feedback = Text(Honey_screen, height=3, font = Font(family="Courier New", size=20, weight="bold"), state=DISABLED, bg=light_theme["output_bg"], fg=light_theme["output_fg"])
@@ -444,6 +436,13 @@ voice_controller.start_listening()
 
 # Optionally bind to button
 toolbar.mic_btn.config(command=voice_controller.activate_commands)
+
+# Add icons and connect to callbacks
+desktop.add_icon("Editor", "OS GUI/assets/cross.png", apps.open_editor, (0, 0))
+desktop.add_icon("Calculator", "OS GUI/assets/cross.png", apps.open_calculator, (100, 0))
+desktop.add_icon("Files", "OS GUI/assets/cross.png", apps.open_files, (0, 100))
+
+
 
 Honey_screen.attributes('-fullscreen', True)
 # Honey_screen.config(bg='#FFCF81')
