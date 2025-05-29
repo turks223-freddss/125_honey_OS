@@ -16,6 +16,9 @@ import cv2
 import time
 from bluefire_ide import file_operations, file_state, main, ui_elements, runner, editor_actions
 from calculator import CalculatorWidget
+from bluefire_ide.ui_elements import create_editor_toolbar, create_editor
+from tooltips import ToolTip, createToolTip
+from icons import iconsD, resize_icon
 
 
 
@@ -108,76 +111,19 @@ def activate_commands():
     # Start listening for commands in a separate thread
     threading.Thread(target=voice_commands, daemon=True).start()
 
-    mic_btn.config(image=mic_listening_icon)
-    mic_btn.image = mic_listening_icon
+    mic_btn.config(image=iconsD['mic_listen'])
+    mic_btn.image = iconsD['mic_listen']
     display_voice_command_feedback("I'm here, dear. What can I do for you?")
 
     # After a short delay, return the mic button to normal state
     restore_mic_icon()
 
 
-#Resize Icon
-def resize_icon(path, size=(32, 32)):
-  img = Image.open(path)
-  img = img.resize(size, Image.Resampling.LANCZOS)
-  return ImageTk.PhotoImage(img)
 
 
 open_microp_path = 'OS GUI/assets/microphone.png'
 open_microp_icon = resize_icon(open_microp_path, size=(130, 130))
 
-
-#ToolTip
-class ToolTip(object):
-
-  def __init__(self, widget):
-    self.widget = widget
-    self.tipwindow = None
-    self.x = self.y = 0
-    self.text = None  # Add a text attribute to store the tooltip text
-
-  def showtip(self, text):
-    """Display text in tooltip window"""
-    self.text = text  # Store the text to be displayed in the tooltip
-    if self.tipwindow or not self.text:
-      return
-
-    self.tipwindow = tw = Toplevel(self.widget)
-    x, y, cx, cy = self.widget.bbox("insert")
-    x = x + self.widget.winfo_rootx()  # Adjust the x-coordinate as needed
-    # Position below the widget: start at the widget's bottom-left corner
-    y = y + self.widget.winfo_rooty() + self.widget.winfo_height()
-
-    tw.wm_overrideredirect(True)
-    tw.wm_geometry("+%d+%d" % (x, y))
-    label = Label(
-        tw,
-        text=self.text,
-        justify=LEFT,  # Use self.text here
-        background="#ffffe0",
-        relief=SOLID,
-        borderwidth=1,
-        font=("tahpma", "10", "normal"))
-    label.pack(ipadx=1)
-
-  def hidetip(self):
-    if self.tipwindow:
-      self.tipwindow.destroy()
-      self.tipwindow = None
-
-
-#Create ToolTip
-def createToolTip(widget, text):
-  toolTip = ToolTip(widget)
-
-  def enter(event):
-    toolTip.showtip(text)
-
-  def leave(event):
-    toolTip.hidetip()
-
-  widget.bind('<Enter>', enter)
-  widget.bind('<Leave>', leave)
 
 
 ####################################################################
@@ -230,50 +176,10 @@ unsaved_changes = False
 #light mode default
 is_dark_mode = False
 
-def resize_icon(path, size=(32, 32)):
-  img = Image.open(path)
-  img = img.resize(size, Image.Resampling.LANCZOS)
-  return ImageTk.PhotoImage(img)
+# Create the toolbar
+toolbar = create_editor_toolbar(Honey_screen)
+toolbar.pack(side="top", fill="x")
 
-
-# Adjust these paths to your actual icon paths
-############################################################################################
-######                         PATH AND ICONS                         ######
-############################################################################################
-new_file_icon_path = 'OS GUI/assets/new_file.png'
-open_file_icon_path = 'OS GUI/assets/existing_file.png'
-open_microp_path = 'OS GUI/assets/microphone.png'
-save_path = 'OS GUI/assets/save.png'
-save_as_path = 'OS GUI/assets/save_as.png'
-copy_icon_path = 'OS GUI/assets/copy.png'
-paste_path = 'OS GUI/assets/clipboard.png'
-cut_path = 'OS GUI/assets/scissors.png'
-undo_path = 'OS GUI/assets/refresh.png'
-redo_path = 'OS GUI/assets/redo.png'
-microphone_path = 'OS GUI/assets/mic.png'
-close_path = 'OS GUI/assets/cross.png'
-minimize_path = 'OS GUI/assets/minimize.png'
-# maximize_path = 'OS GUI/assets/maximize.png'
-background_image_path = 'OS GUI/assets/background.png'
-mic_listen_path = 'OS GUI/assets/mic_listen.png'
-calculator_icon_path = 'OS GUI/assets/Calculator.png'
-
-new_file_icon = resize_icon(new_file_icon_path, size=(30, 30))
-open_file_icon = resize_icon(open_file_icon_path, size=(30, 30))
-mic_icon = resize_icon(microphone_path, size=(30, 30))
-mic_listening_icon = resize_icon(mic_listen_path, size = (30, 30))
-open_microp_icon = resize_icon(open_microp_path, size=(130, 130))
-save_icon = resize_icon(save_path, size=(30, 30))
-save_as_icon = resize_icon(save_as_path, size=(30, 30))
-copy_icon = resize_icon(copy_icon_path, size=(30, 30))
-paste_icon = resize_icon(paste_path, size=(30, 30))
-cut_icon = resize_icon(cut_path, size=(30, 30))
-undo_icon = resize_icon(undo_path, size=(30, 30))
-redo_icon = resize_icon(redo_path, size=(30, 30))
-calculator_icon = resize_icon(calculator_icon_path, size = (30,30))
-close_icon = resize_icon(close_path, size=(15, 15))
-minimize_icon = resize_icon(minimize_path, size=(15, 15))
-# maximize_icon = resize_icon(maximize_path, size=(15, 15))
 
 ############################################################################################
 ######                                                               ######
@@ -286,7 +192,7 @@ def close_window():
     code = editor.get('1.0', END).strip()
     if code:
       tkinter.messagebox.showerror("Unable to Save", "Do you want to save changes?")
-      save()
+      file_operations.save()
       Honey_screen.destroy()
   Honey_screen.destroy()
 
@@ -298,56 +204,55 @@ def minimize_window():
 # def maximize_window():
 #     Honey_screen.state('zoomed')
 
+# class ToolTip(object):
 
-class ToolTip(object):
+#   def __init__(self, widget):
+#     self.widget = widget
+#     self.tipwindow = None
+#     self.x = self.y = 0
+#     self.text = None  # Add a text attribute to store the tooltip text
 
-  def __init__(self, widget):
-    self.widget = widget
-    self.tipwindow = None
-    self.x = self.y = 0
-    self.text = None  # Add a text attribute to store the tooltip text
+#   def showtip(self, text):
+#     """Display text in tooltip window"""
+#     self.text = text  # Store the text to be displayed in the tooltip
+#     if self.tipwindow or not self.text:
+#       return
 
-  def showtip(self, text):
-    """Display text in tooltip window"""
-    self.text = text  # Store the text to be displayed in the tooltip
-    if self.tipwindow or not self.text:
-      return
+#     self.tipwindow = tw = Toplevel(self.widget)
+#     x, y, cx, cy = self.widget.bbox("insert")
+#     x = x + self.widget.winfo_rootx()  # Adjust the x-coordinate as needed
+#     # Position below the widget: start at the widget's bottom-left corner
+#     y = y + self.widget.winfo_rooty() + self.widget.winfo_height()
 
-    self.tipwindow = tw = Toplevel(self.widget)
-    x, y, cx, cy = self.widget.bbox("insert")
-    x = x + self.widget.winfo_rootx()  # Adjust the x-coordinate as needed
-    # Position below the widget: start at the widget's bottom-left corner
-    y = y + self.widget.winfo_rooty() + self.widget.winfo_height()
+#     tw.wm_overrideredirect(True)
+#     tw.wm_geometry("+%d+%d" % (x, y))
+#     label = Label(
+#         tw,
+#         text=self.text,
+#         justify=LEFT,  # Use self.text here
+#         background="#ffffe0",
+#         relief=SOLID,
+#         borderwidth=1,
+#         font=("tahpma", "10", "normal"))
+#     label.pack(ipadx=1)
 
-    tw.wm_overrideredirect(True)
-    tw.wm_geometry("+%d+%d" % (x, y))
-    label = Label(
-        tw,
-        text=self.text,
-        justify=LEFT,  # Use self.text here
-        background="#ffffe0",
-        relief=SOLID,
-        borderwidth=1,
-        font=("tahpma", "10", "normal"))
-    label.pack(ipadx=1)
-
-  def hidetip(self):
-    if self.tipwindow:
-      self.tipwindow.destroy()
-      self.tipwindow = None
+#   def hidetip(self):
+#     if self.tipwindow:
+#       self.tipwindow.destroy()
+#       self.tipwindow = None
 
 
-def createToolTip(widget, text):
-  toolTip = ToolTip(widget)
+# def createToolTip(widget, text):
+#   toolTip = ToolTip(widget)
 
-  def enter(event):
-    toolTip.showtip(text)
+#   def enter(event):
+#     toolTip.showtip(text)
 
-  def leave(event):
-    toolTip.hidetip()
+#   def leave(event):
+#     toolTip.hidetip()
 
-  widget.bind('<Enter>', enter)
-  widget.bind('<Leave>', leave)
+#   widget.bind('<Enter>', enter)
+#   widget.bind('<Leave>', leave)
 
 
 def display_voice_command_feedback(text):
@@ -372,13 +277,13 @@ def listen_for_commands():
         text = r.recognize_google(audio_data).lower()
         if "honey" in text:
           print("Honey Test")
-          mic_btn.config(image=mic_listening_icon)
-          mic_btn.image = mic_listening_icon
+          mic_btn.config(image=iconsD['mic_listen'])
+          mic_btn.image = iconsD['mic_listen']
           display_voice_command_feedback("Yes, dear?")
           voice_commands()  # Call the command processing function
           stop_listening()
-          mic_btn.config(image=mic_icon)
-          mic_btn.image = mic_icon
+          mic_btn.config(image=iconsD['mic_icon'])
+          mic_btn.image = iconsD['mic_icon']
         
     
       except sr.UnknownValueError:
@@ -388,16 +293,16 @@ def listen_for_commands():
 
 
 def restore_mic_icon():
-    mic_btn.config(image=mic_icon)
-    mic_btn.image = mic_icon
+    mic_btn.config(image=iconsD['mic_icon'])
+    mic_btn.image = iconsD['mic_icon']
 
 
 def activate_commands():
     # Start listening for commands in a separate thread
     threading.Thread(target=voice_commands, daemon=True).start()
     
-    mic_btn.config(image=mic_listening_icon)
-    mic_btn.image = mic_listening_icon
+    mic_btn.config(image=iconsD['mic_listen'])
+    mic_btn.image = iconsD['mic_listen']
     
     display_voice_command_feedback("I'm here, dear. What can I do for you?")
 
@@ -425,20 +330,20 @@ def voice_commands():
         else:  
           calculator.set_input_from_string(command_text.lower())
       elif "new file please" in command_text.lower():
-        open_new_file()
+        file_operations.open_new_file()
       # open an existing file
       elif "existing file please" in command_text.lower():
-        open_existing_file()
+        file_operations.open_existing_file()
       elif "abrihi" in command_text.lower():
-        open_existing_file()
+        file_operations.open_existing_file()
       # save file
       elif "save please" in command_text.lower():
-        save()
+        file_operations.save()
       #save as
       elif "save as please" in command_text.lower():
-        save_as()
+        file_operations.save_as()
       elif "save us please" in command_text.lower():
-        save_as()
+        file_operations.save_as()
       # copy text
       elif "copy please" in command_text.lower():
         copy_text()
@@ -505,17 +410,6 @@ def start_listening():
 
 
 # Enables the button once it notice text in the editor
-def check_text_and_toggle_buttons(event=None):
-  global unsaved_changes
-  content = editor.get("1.0", END).strip()
-  if content:
-    unsaved_changes = True
-    disabled_buttons(NORMAL)
-    enable_buttons(NORMAL)
-  else:
-    unsaved_changes = False
-    enable_buttons(DISABLED)
-
 
 ############################################################################################
 ######                         Button Functions                         ######
@@ -533,40 +427,40 @@ def check_text_and_toggle_buttons(event=None):
 #     return editor
 
 # Open new file
-def open_new_file():
-  global file_path, unsaved_changes
+# def open_new_file():
+#   global file_path, unsaved_changes
   
-  # editor = create_tab(title= 'Untitled')
-  editor.delete('1.0', END)
-  file_path = ''
-  Honey_screen.title('Bluefire - New File')
+#   # editor = create_tab(title= 'Untitled')
+#   editor.delete('1.0', END)
+#   file_path = ''
+#   Honey_screen.title('Bluefire - New File')
 
-  display_voice_command_feedback(file_path)
-  unsaved_changes = False
-  disabled_buttons(DISABLED)
+#   display_voice_command_feedback(file_path)
+#   unsaved_changes = False
+#   disabled_buttons(DISABLED)
 
 
 # Opens an existing file
-def open_existing_file():
-  global file_path, unsaved_changes
-  file_operations.open_file(editor)
-  path = file_state.get_file_path()
+# def open_existing_file():
+#   global file_path, unsaved_changes
+#   file_operations.open_file(editor)
+#   path = file_state.get_file_path()
 
-  if path:
-    Honey_screen.title(f'Bluefire - {os.path.basename(path)}')
+#   if path:
+#     Honey_screen.title(f'Bluefire - {os.path.basename(path)}')
 
-  unsaved_changes = False
-  disabled_buttons(DISABLED)
-
-
-# This function is to save the content of the editor
-def save():
-  file_operations.save(editor)
+#   unsaved_changes = False
+#   disabled_buttons(DISABLED)
 
 
-# This function saves the content of the editor to a new file
-def save_as():
-  file_operations.save_as(editor)
+# # This function is to save the content of the editor
+# def save():
+#   file_operations.save(editor)
+
+
+# # This function saves the content of the editor to a new file
+# def save_as():
+#   file_operations.save_as(editor)
 
 
 def toggleEditor():
@@ -579,9 +473,7 @@ def toggleEditor():
       isEditorActive = 1
       
     if isEditorActive == 1:
-        editor = Text(Honey_screen, undo=True, relief=FLAT)
-        editor.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
-        editor.bind('<Key>', check_text_and_toggle_buttons)
+      main.main()
     else:
         editor.destroy()  # removes the widget completely
 
@@ -638,17 +530,17 @@ def toggle_theme():
 
 
 # This function disables of the buttons
-def disabled_buttons(state):
-  save_btn.config(state=state)
-  undo_btn.config(state=state)
-  redo_btn.config(state=state)
+# def disabled_buttons(state):
+#   save_btn.config(state=state)
+#   undo_btn.config(state=state)
+#   redo_btn.config(state=state)
 
 
-def enable_buttons(state):
-  save_as_btn.config(state=state)
-  copy_btn.config(state=state)
-  paste_btn.config(state=state)
-  cut_btn.config(state=state)
+# def enable_buttons(state):
+#   save_as_btn.config(state=state)
+#   copy_btn.config(state=state)
+#   paste_btn.config(state=state)
+#   cut_btn.config(state=state)
 
 
 ############################################################################################
@@ -657,86 +549,6 @@ def enable_buttons(state):
 
 
 def create_toolbar_top():
-  global toolbar, save_as_btn, save_btn
-  toolbar = Frame(Honey_screen, relief=FLAT)
-
-  # New File Button
-  new_file_btn = Button(toolbar, image=new_file_icon, command=open_new_file, relief=FLAT)
-  new_file_btn.pack(side=LEFT, padx=2, pady=2)
-  createToolTip(new_file_btn, "New File")
-
-  # Open Existing File Button
-  open_file_btn = Button(toolbar, image=open_file_icon, command=open_existing_file, relief=FLAT)
-  open_file_btn.pack(side=LEFT, padx=2, pady=2)
-  createToolTip(open_file_btn, "Existing File")
-
-  # Save Button
-  save_btn = Button(toolbar, image=save_icon, command=save, relief=FLAT)
-  save_btn.pack(side=LEFT, padx=2, pady=2)
-  createToolTip(save_btn, "Save")
-
-  # Save As Button
-  save_as_btn = Button(toolbar, image=save_as_icon, command=save_as, relief=FLAT)
-  save_as_btn.pack(side=LEFT, padx=2, pady=2)
-  createToolTip(save_as_btn, "Save As")
-
-  # Copy Button
-  global copy_btn
-  copy_btn = Button(toolbar, image=copy_icon, command=copy_text, relief=FLAT)
-  copy_btn.image = copy_icon
-  copy_btn.pack(side=LEFT, padx=2, pady=2)
-  createToolTip(copy_btn, "Copy")
-
-  # Paste Button
-  global paste_btn
-  paste_btn = Button(toolbar, image=paste_icon, command=paste_text, relief=FLAT)
-  paste_btn.image = paste_icon
-  paste_btn.pack(side=LEFT, padx=2, pady=2)
-  createToolTip(paste_btn, "Paste")
-
-  # Cut Button
-  global cut_btn
-  cut_btn = Button(toolbar, image=cut_icon, command=cut_text, relief=FLAT)
-  cut_btn.image = cut_icon
-  cut_btn.pack(side=LEFT, padx=2, pady=2)
-  createToolTip(cut_btn, "Cut")
-
-  # Undo Button
-  global undo_btn
-  undo_btn = Button(toolbar, image=redo_icon, command=undo_text, relief=FLAT)
-  undo_btn.image = redo_icon
-  undo_btn.pack(side=LEFT, padx=2, pady=2)
-  createToolTip(undo_btn, "Undo")
-
-  # Redo Button
-  global redo_btn
-  redo_btn = Button(toolbar, image=undo_icon, command=redo_text, relief=FLAT)
-  redo_btn.image = undo_icon
-  redo_btn.pack(side=LEFT, padx=2, pady=2)
-  createToolTip(redo_btn, "Redo")
-
-  # Exit Button
-  global close_btn
-  close_btn = Button(toolbar, image=close_icon, command=close_window, relief=FLAT)
-  close_btn.image = close_icon
-  close_btn.pack(side="right", padx=5, pady=2)
-  createToolTip(close_btn, "Exit")
-
-  # Minimize Button
-  global min_btn
-  min_btn = Button(toolbar, image=minimize_icon, command=minimize_window, relief=FLAT)
-  min_btn.image = minimize_icon
-  min_btn.pack(side="right", padx=2, pady=2)
-  createToolTip(min_btn, "Minimize")
-
-
-  # Maximize Button
-  # global max_btn
-  # max_btn = Button(toolbar, image=maximize_icon, command=maximize_window, relief=FLAT)
-  # max_btn.image = maximize_icon
-  # max_btn.pack(side="right",padx=2, pady=2)
-  # createToolTip(max_btn, "Maximize")
-
   # Toogle Button for theme
   toggle_theme_btn = Button(toolbar, text="Theme", command=toggle_theme, relief=FLAT)
   toggle_theme_btn.pack(side=RIGHT, pady=2)
@@ -746,21 +558,21 @@ def create_toolbar_top():
 
   #Mic Button
   global mic_btn
-  mic_btn = Button(toolbar, image=mic_icon, command=activate_commands, relief=FLAT)
-  mic_btn.image = mic_icon
+  mic_btn = Button(toolbar, image=iconsD['mic_icon'], command=activate_commands, relief=FLAT)
+  mic_btn.image = iconsD['mic_icon']
   mic_btn.pack (side="right", padx=2, pady=2)
   createToolTip(mic_btn, "Listen")
   #editor button
   
   global editor_btn
-  editor_btn = Button(toolbar, image=new_file_icon, command=toggleEditor, relief=FLAT)
-  editor_btn.image = new_file_icon
+  editor_btn = Button(toolbar, image=iconsD['new_file'], command=toggleEditor, relief=FLAT)
+  editor_btn.image = iconsD['new_file']
   editor_btn.pack (side="right", padx=2, pady=2)
   createToolTip(editor_btn, "Editor")
   
   global calculator_btn
-  calculator_btn = Button(toolbar, image=calculator_icon, command=toggleCalculator, relief=FLAT)
-  calculator_btn.image = calculator_icon
+  calculator_btn = Button(toolbar, image=iconsD['calculator_icon'], command=toggleCalculator, relief=FLAT)
+  calculator_btn.image = iconsD['calculator_icon']
   calculator_btn.pack (side="right", padx=2, pady=2)
   createToolTip(calculator_btn, "calculator")
   
@@ -781,18 +593,15 @@ screen_height = Honey_screen.winfo_screenheight()
 isEditorActive = 0
 isCalculatorActive = 0
 if isEditorActive == 1:
-  global editor
-  editor = Text(Honey_screen, undo=True, relief=FLAT)
-  editor.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
-  editor.bind('<Key>', check_text_and_toggle_buttons)
+  main.main()
 
 if isCalculatorActive == 1:
   calculator = CalculatorWidget(Honey_screen)
   calculator.pack(side=RIGHT, fill=BOTH, expand=False, padx=10, pady=20)
 
 
-disabled_buttons(DISABLED)
-enable_buttons(DISABLED)
+# disabled_buttons(DISABLED)
+# enable_buttons(DISABLED)
 
 start_listening()
 
