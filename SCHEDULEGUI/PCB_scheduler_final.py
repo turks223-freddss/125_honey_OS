@@ -1,7 +1,8 @@
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView
 import sys
 from collections import deque
+import random
 
 
 class SchedulerSim(QtWidgets.QWidget):
@@ -9,6 +10,12 @@ class SchedulerSim(QtWidgets.QWidget):
         super().__init__()
         self.setWindowTitle("PCB Scheduler Simulation")
         self.setGeometry(100, 100, 1000, 700)
+        
+        self.total_memory_mb = 500
+        self.block_size_mb = 20
+        self.total_blocks = self.total_memory_mb // self.block_size_mb
+        self.memory_blocks = [None] * self.total_blocks  # None means free block, else stores pid
+        
         self.setup_ui()
 
         self.sim_timer = QtCore.QTimer()
@@ -21,16 +28,33 @@ class SchedulerSim(QtWidgets.QWidget):
         self.quantum = 2
         self.quantum_counter = 0
         self.algorithm = ""
-
+        
+        
     def setup_ui(self):
         layout = QtWidgets.QVBoxLayout(self)
 
-        self.table = QtWidgets.QTableWidget(5, 3)
-        self.table.setHorizontalHeaderLabels(["PID", "Arrival Time", "Burst Time"])
+        self.table = QtWidgets.QTableWidget(10, 4)
+        self.table.setHorizontalHeaderLabels(["PID", "Arrival Time", "Burst Time", "Memory"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(QtWidgets.QLabel("Enter Process Data:"))
         layout.addWidget(self.table)
 
+        self.memory_table = QtWidgets.QTableWidget(1, self.total_blocks)
+        self.memory_table.setFixedHeight(50)
+        self.memory_table.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.memory_table.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.memory_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.memory_table.setVerticalHeaderLabels(["Memory Blocks"])
+        self.memory_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.memory_table.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.memory_table.setHorizontalHeaderLabels([str(i) for i in range(self.total_blocks)])
+        self.memory_table.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
+
+        # Add memory_table to the layout after timeline_container
+        self.layout().addWidget(QtWidgets.QLabel("Memory Allocation:"))
+        self.layout().addWidget(self.memory_table)
+        
+        
         self.algorithm_box = QtWidgets.QComboBox()
         self.algorithm_box.addItems(["First Come First Serve", "Shortest Job First", "Round Robin", "SRPT"])
         layout.addWidget(QtWidgets.QLabel("Select Scheduling Algorithm:"))
@@ -62,12 +86,47 @@ class SchedulerSim(QtWidgets.QWidget):
 
     def simulate(self):
         self.sim_processes = []
+        list_of_processes = [
+            "Spotify", "Calculator", "Google Chrome", "Camera", "Bumble", "Microsoft Excel", 
+            "Microsoft Edge", "Discord", "Facebook", "Messenger", "Skype", "Steam", "FireFox", 
+            "Task Manager", "VLC Media Player", "Microsoft Word", "Microsoft Powerpoint", "Microsoft Office", 
+            "Microsoft Outlook", "Microsoft Teams", "Bookworm Adventures", "Adobe Photoshop", 
+            "Adobe Premiere Pro", "Adobe Edition", "Adobe Illustrator", "Zoom", "Google Meet", 
+            "WPS", "Microsoft OneDrive", "Adobe Reader and Acrobat Manager", "Adobe After Effects", 
+            "CheatEngine", "Ibis Paint", "Visual Studio Code", "GitHub Desktop", "CLion", "Sublime Text", 
+            "Notepad++", "Notepad", "System Settings", "Command Prompt", "Powershell", "Opera GX", "File Explorer", 
+            "PuTTy", "WinRar", "Oracle VM Box", "Team Viewer", "Tindr", "Blender", "SketchUp", "Unity", "PyCharm", 
+            "Eclipse", "NetBeans", "MySQL Server", "MySQL Workbench", "XAMPP Control Panel", "PowerPlanner", 
+            "Solitaire", "Calendar", "Clock", "Git", "OBS Studio", "Sticky Notes", "Tekken", "Skull Girls", 
+            "Stardew Valley", "Sound Recorder", "Snipping Tool", "Terminal", "Zotero", "MechaVibes", 
+            "Youtube", "Instagram", "Tiktok", "X", "Linkedin", "Capcut", "Netflix", "Honkai Star Rail", 
+            "Genshin Impact", "League of Legends", "Dota 2", "Crossfire", "Counter Strike", "Call of Duty", 
+            "Last of Us", "The Sims 4", "Grammarly", "Notion", "Trello"
+        ]
+        # Auto-fill table with random processes if it's empty
+        if all(self.table.item(row, 0) is None for row in range(self.table.rowCount())):
+            self.table.setRowCount(10)
+            used_process_names = set()
+            random.shuffle(list_of_processes)
+            for row in range(10):
+                # Ensure unique PID (like A, B, C...)
+                process_name = list_of_processes.pop()  # Unique name
+                used_process_names.add(process_name)
+                at = random.randint(0, 10)
+                bt = random.randint(1, 10)
+                mem = random.choice([20, 40, 60, 80, 100, 120])
+                self.table.setItem(row, 0, QTableWidgetItem(process_name))
+                self.table.setItem(row, 1, QTableWidgetItem(str(at)))
+                self.table.setItem(row, 2, QTableWidgetItem(str(bt)))
+                self.table.setItem(row, 3, QTableWidgetItem(str(mem)))
+                
         for row in range(self.table.rowCount()):
             try:
                 pid = str(self.table.item(row, 0).text())
                 at = int(self.table.item(row, 1).text())
                 bt = int(self.table.item(row, 2).text())
-                self.sim_processes.append({"pid": pid, "at": at, "bt": bt, "remaining": bt})
+                mem = int(self.table.item(row, 3).text())
+                self.sim_processes.append({"pid": pid, "at": at, "bt": bt, "remaining": bt, "mem":mem})
             except:
                 continue
 
@@ -89,6 +148,9 @@ class SchedulerSim(QtWidgets.QWidget):
         # self.table.setVisible(False)  # 🔸 Hide input table during simulation
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.sim_timer.start(1000)
+        
+        self.memory_blocks = [None] * self.total_blocks
+        self.update_memory_table()
 
     def simulate_step(self):
         self.sim_time += 1
@@ -101,6 +163,7 @@ class SchedulerSim(QtWidgets.QWidget):
             self.table.setItem(row, 0, QTableWidgetItem(p["pid"]))
             self.table.setItem(row, 1, QTableWidgetItem(str(p["at"])))
             self.table.setItem(row, 2, QTableWidgetItem(str(p["bt"])))
+            self.table.setItem(row, 3, QTableWidgetItem(str(p["mem"])))
 
         if self.algorithm == "First Come First Serve":
             self.run_fcfs()
@@ -118,6 +181,23 @@ class SchedulerSim(QtWidgets.QWidget):
         if len(self.sim_done) == len(self.sim_processes):
             self.sim_timer.stop()
             self.display_result()
+        
+        # Before running the step, try to allocate memory if a process is starting
+        if self.current_process and not self.current_process.get("mem_allocated", False):
+            mem_needed = self.current_process["mem"]
+            blocks_needed = (mem_needed + self.block_size_mb - 1) // self.block_size_mb
+            allocated = self.allocate_memory(self.current_process["pid"], blocks_needed)
+            if allocated:
+                self.current_process["mem_allocated"] = True
+            else:
+                # No memory available, cannot run this process now
+                # Put current_process back in queue and set current_process to None (simulate waiting)
+                self.sim_queue.appendleft(self.current_process)
+                self.current_process = None
+
+        # ... rest of simulate_step continues as before ...
+
+        self.update_memory_table()
     
     def update_gui_table(self):
         for row in range(self.table.rowCount()):
@@ -180,8 +260,37 @@ class SchedulerSim(QtWidgets.QWidget):
             self.current_process["remaining"] -= 1
             if self.current_process["remaining"] == 0:
                 self.finish_process()
+                
+    def allocate_memory(self, pid, blocks_needed):
+        # Find continuous free blocks? or just enough free blocks anywhere
+        free_indices = [i for i, b in enumerate(self.memory_blocks) if b is None]
+        if len(free_indices) < blocks_needed:
+            return False  # Not enough memory
+
+        # Allocate first 'blocks_needed' free blocks (simple First Fit)
+        allocated_blocks = free_indices[:blocks_needed]
+        for idx in allocated_blocks:
+            self.memory_blocks[idx] = pid
+        return True
+
+    def free_memory(self, pid):
+        for i in range(len(self.memory_blocks)):
+            if self.memory_blocks[i] == pid:
+                self.memory_blocks[i] = None
+
+    def update_memory_table(self):
+        for col in range(self.total_blocks):
+            pid = self.memory_blocks[col]
+            item = QTableWidgetItem(pid if pid else "")
+            # Color based on pid or free
+            if pid:
+                item.setBackground(QtGui.QColor(self.get_color(pid)))
+            else:
+                item.setBackground(QtGui.QColor("#FFFFFF"))
+            self.memory_table.setItem(0, col, item)
 
     def finish_process(self):
+        self.free_memory(self.current_process["pid"])
         self.current_process["ct"] = self.sim_time
         self.current_process["tat"] = self.current_process["ct"] - self.current_process["at"]
         self.current_process["wt"] = self.current_process["tat"] - self.current_process["bt"]
