@@ -1,4 +1,5 @@
 from tkinter import *
+import tkinter as tk
 from tkinter import ttk
 from tkinter.filedialog import asksaveasfilename, askopenfilename
 import tkinter.messagebox
@@ -220,8 +221,25 @@ def toggleCalculator():
         isCalculatorActive = False
         calculator = None
     else:
-        calculator = CalculatorWidget(Honey_screen)
-        calculator.pack(side=RIGHT, fill=BOTH, expand=False, padx=10, pady=20)
+        calculator = tk.Toplevel(Honey_screen)  # Floating window
+        calculator.overrideredirect(True)       # Remove title bar for custom dragging
+        calculator.geometry("250x300+100+100")  # Initial size and position
+
+        widget = CalculatorWidget(calculator)
+        widget.pack(fill=tk.BOTH, expand=True)
+
+        # Bind mouse events to make it draggable
+        def start_move(event):
+            calculator.x = event.x
+            calculator.y = event.y
+
+        def do_move(event):
+            x = calculator.winfo_x() + event.x - calculator.x
+            y = calculator.winfo_y() + event.y - calculator.y
+            calculator.geometry(f"+{x}+{y}")
+
+        calculator.bind("<Button-1>", start_move)
+        calculator.bind("<B1-Motion>", do_move)
         isCalculatorActive = True
 
   
