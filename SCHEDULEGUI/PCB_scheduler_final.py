@@ -32,7 +32,62 @@ class SchedulerSim(QtWidgets.QWidget):
         self.quantum_counter = 0
         self.algorithm = ""
         
-        
+    def apply_bee_theme(self):
+        bee_style = """
+            QWidget {
+                background-color: #fff8dc;  /* light yellow */
+                font-family: Arial;
+                font-size: 14px;
+            }
+
+            QTableWidget {
+                background-color: #ffffe0; /* lemon chiffon */
+                gridline-color: #d4af37;  /* honey gold */
+            }
+
+            QTableWidget::item {
+                selection-background-color: #ffd700;  /* gold */
+            }
+
+            QHeaderView::section {
+                background-color: #ffcc00;
+                color: black;
+                padding: 4px;
+                border: 1px solid #d4af37;
+            }
+
+            QPushButton {
+                background-color: #ffcc00;
+                color: black;
+                border: 2px solid #d4af37;
+                border-radius: 8px;
+                padding: 5px 10px;
+            }
+
+            QPushButton:hover {
+                background-color: #ffd700;
+            }
+
+            QComboBox {
+                background-color: #fffacd;  /* light yellow */
+                border: 1px solid #d4af37;
+                padding: 4px;
+            }
+
+            QLineEdit {
+                background-color: #fffacd;
+                border: 1px solid #d4af37;
+                padding: 4px;
+            }
+
+            QLabel {
+                font-weight: bold;
+                color: #222;
+            }
+        """
+        self.setStyleSheet(bee_style)
+
+    
     def setup_ui(self):
         main_layout = QtWidgets.QHBoxLayout(self)  # Horizontal main layout
 
@@ -86,7 +141,7 @@ class SchedulerSim(QtWidgets.QWidget):
         self.memory_table.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.memory_table.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.memory_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-        self.memory_table.setHorizontalHeaderLabels(["Mem Blocks"])
+        self.memory_table.setHorizontalHeaderLabels(["Mem Blocks (500mb)"])
         self.memory_table.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.memory_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.memory_table.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
@@ -97,6 +152,8 @@ class SchedulerSim(QtWidgets.QWidget):
         self.allocation_strategy_box = QtWidgets.QComboBox()
         self.allocation_strategy_box.addItems(["First-Fit", "Best-Fit", "Worst-Fit"])
         right_layout.addWidget(self.allocation_strategy_box)
+        
+        self.apply_bee_theme()
 
     def simulate(self):
         self.sim_processes = []

@@ -109,6 +109,8 @@ class VoiceController:
                 elif"open simulation" in command_text:
                     apps.open_simulator()
                     print("hello")
+                elif"close simulation" in command_text:
+                    apps.close_simulator()
 
             except sr.WaitTimeoutError:
                 self.display_feedback_safe("You were a little quiet, dear. Try again?")

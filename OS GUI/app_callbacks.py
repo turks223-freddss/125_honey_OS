@@ -13,6 +13,7 @@ def open_editor():
 isCalculatorActive = False
 calculator = None
 Honey_screen = None  # You will assign this from your main IDE
+simulator_process = None  # To track the launched process
 
 def open_calculator():
     global isCalculatorActive, calculator, Honey_screen
@@ -68,9 +69,19 @@ def open_calculator():
 
 
 def open_simulator():
+    global simulator_process
     simulator_path = os.path.join(os.path.dirname(__file__), '..', 'SCHEDULEGUI', 'PCB_scheduler_final.py')
-    simulator_path = os.path.abspath(simulator_path)  # Ensure full path
-    subprocess.Popen([sys.executable, simulator_path])
+    simulator_path = os.path.abspath(simulator_path)
+    simulator_process = subprocess.Popen([sys.executable, simulator_path])
+
+def close_simulator():
+    global simulator_process
+    if simulator_process and simulator_process.poll() is None:
+        simulator_process.terminate()
+        simulator_process = None
+        print("Simulator closed.")
+    else:
+        print("No simulator is running.")
 
 
 def set_main_screen(screen):
