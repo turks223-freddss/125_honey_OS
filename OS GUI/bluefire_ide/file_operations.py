@@ -4,7 +4,7 @@ from tkinter.filedialog import askopenfilename, asksaveasfilename
 import tkinter.messagebox
 from tkinter import END
 import os
-from file_state import set_file_path, get_file_path
+from .file_state import set_file_path, get_file_path
 
 
 def open_new_file(editor, window, disabled_buttons_fn, display_feedback_fn):

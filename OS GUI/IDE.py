@@ -16,6 +16,7 @@ import wave
 import cv2
 import time
 from calculator import CalculatorWidget
+from bluefire_ide import file_operations, file_state, editor_actions
 from camera import CameraViewer
 from StartUp import StartUp
 from tooltip import create_tooltip
@@ -128,13 +129,10 @@ icons = {
 
 # Open new file
 def open_new_file():
-  global file_path
-  global unsaved_changes
+  global file_path, unsaved_changes
   
   # editor = create_tab(title= 'Untitled')
   editor.delete('1.0', END)
-  file_path = ''
-  Honey_screen.title('Bluefire - New File')
 
   display_voice_command_feedback(file_path)
   unsaved_changes = False
@@ -142,70 +140,25 @@ def open_new_file():
 
 # Opens an existing file
 def open_existing_file():
-  global file_path
-  global unsaved_changes
+  global file_path, unsaved_changes
 
-  code = editor.get('1.0', END).strip()
+  file_operations.open_file(editor)
+  path = file_state.get_file_path()
 
-  if code:
-    tkinter.messagebox.showerror("Unable to Save", "Do you want to save changes?")
-  path = askopenfilename(filetypes=[('Bluefire Files', '*.blu')])
   if path:
-    with open(path, 'r') as file:
-      code = file.read()
+      Honey_screen.title(f'Bluefire - {os.path.basename(path)}')  #change to edito scren
 
-      editor.delete('1.0', END)
-      # editor = create_tab(content=code, title=os.path.basename(path))
-
-      editor.insert('1.0', code)
-      set_file_path(path)
-      Honey_screen.title(f'Bluefire - {os.path.basename(path)}')
-
-      display_voice_command_feedback(path)
   unsaved_changes = False
 
 
 # This function is to save the content of the editor
 def save():
-  global file_path
-  global unsaved_changes
-
-  code = editor.get('1.0', END).strip()
-  if code:
-    # toggle_button_state(save_btn, DISABLED)
-    tkinter.messagebox.showerror("Unable to Save", "Do you want to save changes?")
-    return
-  if not file_path:
-    path = asksaveasfilename(filetypes=[('Bluefire Files', '*.blu')])
-  else:
-    path = file_path
-  if not path:
-    return
-  if not path.endswith('.blu'):
-    path += '.blu'
-  with open(path, 'w') as file:
-    file.write(code)
-    set_file_path(path)
-  unsaved_changes = False
+  file_operations.save(editor)
 
 
 # This function saves the content of the editor to a new file
 def save_as():
-  global unsaved_changes
-
-  code = editor.get('1.0', END).strip()
-  if not code:
-    tkinter.messagebox.showerror("Unable to Save", "There is no content to save.")
-    return
-  path = asksaveasfilename(filetypes=[('Bluefire Files', '*.blu')])
-  if not path:
-    return
-  if not path.endswith('.blu'):
-    path += '.blu'
-  with open(path, 'w') as file:
-    file.write(code)
-    set_file_path(path)
-  unsaved_changes = False
+  file_operations.save_as(editor)
 
 
 def toggleEditor():
@@ -278,26 +231,11 @@ def toggleCalculator():
         calculator.bind("<B1-Motion>", do_move)
         isCalculatorActive = True
 
-  
-
-def cut_text():
-  editor.event_generate("<<Cut>>")
-
-
-def copy_text():
-  editor.event_generate("<<Copy>>")
-
-
-def paste_text():
-  editor.event_generate("<<Paste>>")
-
-
-def undo_text():
-  editor.edit_undo()
-
-
-def redo_text():
-  editor.edit_redo()
+cut_text = lambda: editor_actions.cut(editor)
+copy_text = lambda: editor_actions.copy(editor)
+paste_text = lambda: editor_actions.paste(editor)
+undo_text = lambda: editor_actions.undo(editor)
+redo_text = lambda: editor_actions.redo(editor)
 
   
 def close_window():
