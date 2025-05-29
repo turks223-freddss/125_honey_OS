@@ -27,6 +27,7 @@ from taskbar import Taskbar
 from desktop import Desktop
 import app_callbacks as apps
 from voicewidget import VoiceAssistantWidget
+from desktop_icon import DesktopIcon
 
 honeyBoot = StartUp(
         path="OS GUI/assets/Final.mp4",  # Adjust path if needed
@@ -57,7 +58,7 @@ background_label = Label(Honey_screen, image=bg_photo)
 background_label.place(x=0, y=0, relwidth=1, relheight=1)
 background_label.image = bg_photo  #keep a reference
 
-
+apps.set_main_screen(Honey_screen) 
 
 editor = None
 calculator = None
@@ -346,9 +347,18 @@ desktop.pack(fill="both", expand=True)
 
 
 desktop.add_icon("Editor", "OS GUI/assets/cross.png", apps.open_editor, (0, 0))
-desktop.add_icon("Calculator", "OS GUI/assets/cross.png", apps.open_calculator, (100, 0))
-desktop.add_icon("Files", "OS GUI/assets/cross.png", apps.open_files, (0, 100))
+desktop.add_icon("Calculator", "OS GUI/assets/camera_icon.png", apps.open_calculator, (100, 0))
+desktop.add_icon("Files", "OS GUI/assets/existing_file.png", apps.open_files, (0, 100))
 
+desktop.bind("<Button-1>", lambda e: DesktopIcon.selected_icon and DesktopIcon.selected_icon.deselect())
+
+
+def clear_selection(event):
+        if DesktopIcon.selected_icon:
+            DesktopIcon.selected_icon.deselect()
+            DesktopIcon.selected_icon = None
+
+        Honey_screen.bind("<Button-1>", clear_selection)
 
 voice_widget = VoiceAssistantWidget(desktop, font_size=12, button_command=lambda: None,mic_icon=icons["mic"])
 desktop.add_widget(voice_widget, width=600, height=80)
