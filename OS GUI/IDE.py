@@ -321,7 +321,7 @@ desktop.pack(fill="both", expand=True)
 
 
 desktop.add_icon("Editor", "OS GUI/assets/cross.png", apps.open_editor, (0, 0))
-desktop.add_icon("Calculator", "OS GUI/assets/camera_icon.png", apps.open_calculator, (100, 0))
+desktop.add_icon("Calculator", "OS GUI/assets/calculator.png", apps.open_calculator, (100, 0))
 desktop.add_icon("Files", "OS GUI/assets/existing_file.png", apps.open_files, (0, 100))
 
 desktop.bind("<Button-1>", lambda e: DesktopIcon.selected_icon and DesktopIcon.selected_icon.deselect())
@@ -396,16 +396,6 @@ unsaved_changes = False
 def set_file_path(path):
   global file_path
   file_path = path
-
-
-############################################################################################
-######                      TOOLBAR  |  BUTTONS                       ######
-############################################################################################
-
-# Voice command feedback area
-voice_command_feedback = Text(Honey_screen, height=3, font = Font(family="Courier New", size=20, weight="bold"), state=DISABLED, bg=light_theme["output_bg"], fg=light_theme["output_fg"])
-voice_command_feedback.pack(side=BOTTOM, fill=X)
-voice_command_feedback.config()
 
 
 screen_height = Honey_screen.winfo_screenheight()
