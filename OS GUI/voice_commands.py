@@ -16,6 +16,10 @@ class VoiceController:
         self.is_dark_mode = is_dark_mode
         self.listening = False
 
+    def display_feedback_safe(self, message):
+        # Schedule the UI update safely on the main thread
+        self.toolbar.after(0, lambda: self.display_feedback(message))
+
     def stop_listening(self):
         self.listening = False
 
@@ -27,7 +31,7 @@ class VoiceController:
         threading.Thread(target=self.voice_commands, daemon=True).start()
         self.toolbar.mic_btn.config(image=self.mic_listening_icon)
         self.toolbar.mic_btn.image = self.mic_listening_icon
-        self.display_feedback("I'm here, dear. What can I do for you?")
+        self.display_feedback_safe("I'm here, dear. What can I do for you?")
 
     def start_listening(self):
         threading.Thread(target=self.listen_for_commands, daemon=True).start()
@@ -44,7 +48,7 @@ class VoiceController:
                     if "honey" in text:
                         print("Wake word detected")
                         self.toolbar.mic_btn.config(image=self.mic_listening_icon)
-                        self.display_feedback("Yes, dear?")
+                        self.display_feedback_safe("Yes, dear?")
                         self.voice_commands()
                         self.toolbar.mic_btn.config(image=self.mic_icon)
                 except sr.UnknownValueError:
@@ -58,7 +62,7 @@ class VoiceController:
             try:
                 audio_data = r.listen(source, timeout=5)
                 command_text = r.recognize_google(audio_data).lower()
-                self.display_feedback(f"Okay, dear. Let me quickly do that for you... ({command_text})")
+                self.display_feedback_safe(f"Okay, dear. Let me quickly do that for you... ({command_text})")
 
                 # Calculator interaction
                 if self.is_calculator_active == 1:
@@ -103,15 +107,15 @@ class VoiceController:
                     self.toolbar.commands["toggleCalculator"]()
 
             except sr.WaitTimeoutError:
-                self.display_feedback("You were a little quiet, dear. Try again?")
+                self.display_feedback_safe("You were a little quiet, dear. Try again?")
             except sr.UnknownValueError:
-                self.display_feedback("I couldn't quite catch that, dear.")
+                self.display_feedback_safe("I couldn't quite catch that, dear.")
             except sr.RequestError as e:
-                self.display_feedback(f"Oops. Something's wrong with the voice service. ({e})")
+                self.display_feedback_safe(f"Oops. Something's wrong with the voice service. ({e})")
             except KeyError as e:
-                self.display_feedback(f"I didn't find a command for '{e}'.")
+                self.display_feedback_safe(f"I didn't find a command for '{e}'.")
             except Exception as e:
-                self.display_feedback(f"Sorry, dear. I didn't quite get that... ({str(e)})")
+                self.display_feedback_safe(f"Sorry, dear. I didn't quite get that... ({str(e)})")
 
             self.stop_listening()
             self.restore_mic_icon()
