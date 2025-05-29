@@ -11,6 +11,9 @@ class SchedulerSim(QtWidgets.QWidget):
         self.setWindowTitle("PCB Scheduler Simulation")
         self.setGeometry(100, 100, 1000, 700)
         
+        self.ready_queue = deque()
+        self.current_process = None
+        
         self.total_memory_mb = 500
         self.block_size_mb = 20
         self.total_blocks = self.total_memory_mb // self.block_size_mb
@@ -34,7 +37,9 @@ class SchedulerSim(QtWidgets.QWidget):
         main_layout = QtWidgets.QHBoxLayout(self)  # Horizontal main layout
 
         left_layout = QtWidgets.QVBoxLayout()
+        right_layout = QtWidgets.QVBoxLayout()
         main_layout.addLayout(left_layout, stretch=3)  # left side bigger
+        main_layout.addLayout(right_layout, stretch=1)  # right side smaller
 
         # Move all your current widgets except memory_table into left_layout:
         self.table = QtWidgets.QTableWidget(10, 4)
@@ -55,6 +60,10 @@ class SchedulerSim(QtWidgets.QWidget):
         self.start_button = QtWidgets.QPushButton("Simulate")
         self.start_button.clicked.connect(self.simulate)
         left_layout.addWidget(self.start_button)
+        
+        self.reset_button = QtWidgets.QPushButton("Reset")
+        self.reset_button.clicked.connect(self.reset_simulation)
+        left_layout.addWidget(self.reset_button)
 
         self.result_table = QtWidgets.QTableWidget()
         self.result_table.setColumnCount(6)
@@ -81,8 +90,13 @@ class SchedulerSim(QtWidgets.QWidget):
         self.memory_table.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.memory_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.memory_table.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
+        right_layout.addWidget(self.memory_table)
 
-        main_layout.addWidget(self.memory_table, stretch=1)
+        right_layout.addWidget(QtWidgets.QLabel("Memory Allocation Strategy:"))
+
+        self.allocation_strategy_box = QtWidgets.QComboBox()
+        self.allocation_strategy_box.addItems(["First-Fit", "Best-Fit", "Worst-Fit"])
+        right_layout.addWidget(self.allocation_strategy_box)
 
     def simulate(self):
         self.sim_processes = []
@@ -155,47 +169,59 @@ class SchedulerSim(QtWidgets.QWidget):
     def simulate_step(self):
         self.sim_time += 1
 
-        # Add newly arriving processes to queue
+        # Add newly arriving processes to sim_queue
         arrivals = [p for p in self.sim_processes if p["at"] == self.sim_time - 1]
         for p in arrivals:
             self.sim_queue.append(p)
 
-        # Try to allocate memory and start processes from queue
-        new_queue = deque()
+        # Try to allocate memory for processes in sim_queue
+        new_sim_queue = deque()
         for p in self.sim_queue:
             mem_needed = p["mem"]
             blocks_needed = (mem_needed + self.block_size_mb - 1) // self.block_size_mb
             allocated = self.allocate_memory(p["pid"], blocks_needed)
             if allocated:
                 p["mem_allocated"] = True
-                self.running_processes.append(p)
+                self.ready_queue.append(p)  # loaded, ready for CPU
             else:
-                new_queue.append(p)  # Not enough memory, stay in queue
-        self.sim_queue = new_queue
+                new_sim_queue.append(p)
+        self.sim_queue = new_sim_queue
 
-        # Run all running processes (simulate concurrency)
-        finished = []
-        for p in self.running_processes:
-            # For RR and SRPT, implement logic here if needed (else assume all run)
-            p["remaining"] -= 1
-            if p["remaining"] <= 0:
-                finished.append(p)
+        # Pick next process to run based on scheduling algo
+        if not self.current_process or self.current_process["remaining"] <= 0 or (self.algorithm == "Round Robin" and self.quantum_counter == self.quantum):
+            if self.current_process and self.current_process["remaining"] > 0:
+                # for RR, put current back in ready queue if not done
+                if self.algorithm == "Round Robin":
+                    self.ready_queue.append(self.current_process)
+            # Pick next process according to algorithm from ready_queue
+            self.current_process = self.pick_next_process()
 
-        # Finish processes and free memory
-        for p in finished:
-            self.finish_process(p)
-            self.running_processes.remove(p)
+            # Reset RR quantum counter
+            if self.algorithm == "Round Robin":
+                self.quantum_counter = 0
 
+        # Run current_process
+        if self.current_process:
+            self.current_process["remaining"] -= 1
+            if self.algorithm == "Round Robin":
+                self.quantum_counter += 1
+
+            if self.current_process["remaining"] <= 0:
+                self.finish_process(self.current_process)
+                self.current_process = None
+
+        # Update GUI and memory visualization
         self.update_gui_table()
+        self.update_memory_table()
 
-        running_pids = ', '.join(p['pid'] for p in self.running_processes) if self.running_processes else 'Idle'
-        self.setWindowTitle(f"Time: {self.sim_time} | Running: {running_pids}")
+        # Update window title
+        running_pid = self.current_process["pid"] if self.current_process else "Idle"
+        self.setWindowTitle(f"Time: {self.sim_time} | Running: {running_pid}")
 
+        # End simulation check
         if len(self.sim_done) == len(self.sim_processes):
             self.sim_timer.stop()
             self.display_result()
-
-        self.update_memory_table()
     
     def update_gui_table(self):
         for row in range(self.table.rowCount()):
@@ -203,12 +229,48 @@ class SchedulerSim(QtWidgets.QWidget):
             if pid_item is None:
                 continue
             pid = pid_item.text()
-            for p in self.sim_queue:
+
+            # Check current_process first
+            if self.current_process and self.current_process["pid"] == pid:
+                self.table.setItem(row, 2, QTableWidgetItem(str(self.current_process["remaining"])))
+                continue
+            
+            # Check ready_queue for process with this pid
+            for p in self.ready_queue:
                 if p["pid"] == pid:
                     self.table.setItem(row, 2, QTableWidgetItem(str(p["remaining"])))
-            for p in self.running_processes:
-                if pid == p["pid"]:
-                    self.table.setItem(row, 2, QTableWidgetItem(str(p["remaining"])))
+                    break
+            else:
+                # If process is finished or not found, optionally reset to 0 or original burst time
+                pass
+    
+    def pick_next_process(self):
+        if not self.ready_queue:
+            return None
+
+        if self.algorithm == "First Come First Serve":
+            return self.ready_queue.popleft()
+        elif self.algorithm == "Shortest Job First":
+            # Pick shortest burst time
+            shortest = min(self.ready_queue, key=lambda p: p["bt"])
+            self.ready_queue.remove(shortest)
+            return shortest
+        elif self.algorithm == "Round Robin":
+            return self.ready_queue.popleft()
+        elif self.algorithm == "SRPT":
+            # Preemptive shortest remaining time
+            if self.current_process:
+                all_ready = list(self.ready_queue) + [self.current_process]
+            else:
+                all_ready = list(self.ready_queue)
+            shortest = min(all_ready, key=lambda p: p["remaining"])
+            # Remove chosen from ready_queue if it's there
+            if shortest in self.ready_queue:
+                self.ready_queue.remove(shortest)
+            # If chosen is not current_process, push current back to ready_queue
+            if self.current_process and self.current_process != shortest:
+                self.ready_queue.append(self.current_process)
+            return shortest
 
     def run_fcfs(self):
         if not self.current_process and self.sim_queue:
@@ -259,18 +321,87 @@ class SchedulerSim(QtWidgets.QWidget):
             self.current_process["remaining"] -= 1
             if self.current_process["remaining"] == 0:
                 self.finish_process()
-                
+    
     def allocate_memory(self, pid, blocks_needed):
-        # Find continuous free blocks? or just enough free blocks anywhere
-        free_indices = [i for i, b in enumerate(self.memory_blocks) if b is None]
-        if len(free_indices) < blocks_needed:
-            return False  # Not enough memory
+        strategy = self.allocation_strategy_box.currentText()
 
-        # Allocate first 'blocks_needed' free blocks (simple First Fit)
-        allocated_blocks = free_indices[:blocks_needed]
-        for idx in allocated_blocks:
-            self.memory_blocks[idx] = pid
+        # Find free memory blocks based on strategy
+        if strategy == "First-Fit":
+            start_index = self.find_first_fit(blocks_needed)
+        elif strategy == "Best-Fit":
+            start_index = self.find_best_fit(blocks_needed)
+        elif strategy == "Worst-Fit":
+            start_index = self.find_worst_fit(blocks_needed)
+        else:
+            start_index = None
+
+        if start_index is None:
+            return False  # No sufficient free block found
+
+        # Allocate blocks to process
+        for i in range(start_index, start_index + blocks_needed):
+            self.memory_blocks[i] = pid
         return True
+    
+    def find_first_fit(self, blocks_needed):
+        free_count = 0
+        start_index = 0
+        for i, block in enumerate(self.memory_blocks):
+            if block is None:
+                if free_count == 0:
+                    start_index = i
+                free_count += 1
+                if free_count >= blocks_needed:
+                    return start_index
+            else:
+                free_count = 0
+        return None
+
+    def find_best_fit(self, blocks_needed):
+        free_blocks = []
+        free_count = 0
+        start_index = 0
+
+        # Collect all free blocks ranges
+        for i, block in enumerate(self.memory_blocks + [1]):  # Add sentinel to flush last run
+            if block is None:
+                if free_count == 0:
+                    start_index = i
+                free_count += 1
+            else:
+                if free_count >= blocks_needed:
+                    free_blocks.append((free_count, start_index))
+                free_count = 0
+
+        if not free_blocks:
+            return None
+
+        # Pick the smallest free block range that fits the request
+        free_blocks.sort(key=lambda x: x[0])
+        return free_blocks[0][1]
+
+    def find_worst_fit(self, blocks_needed):
+        free_blocks = []
+        free_count = 0
+        start_index = 0
+
+        # Collect all free blocks ranges
+        for i, block in enumerate(self.memory_blocks + [1]):  # Add sentinel to flush last run
+            if block is None:
+                if free_count == 0:
+                    start_index = i
+                free_count += 1
+            else:
+                if free_count >= blocks_needed:
+                    free_blocks.append((free_count, start_index))
+                free_count = 0
+
+        if not free_blocks:
+            return None
+
+        # Pick the largest free block range that fits the request
+        free_blocks.sort(key=lambda x: x[0], reverse=True)
+        return free_blocks[0][1]
 
     def free_memory(self, pid):
         for i in range(len(self.memory_blocks)):
@@ -324,6 +455,34 @@ class SchedulerSim(QtWidgets.QWidget):
         }
         return colors.get(pid.upper(), '#D3D3D3')
 
+    def reset_simulation(self):
+        # Stop simulation timer
+        self.sim_timer.stop()
+
+        # Clear input process table
+        self.table.clearContents()
+        self.table.setRowCount(10)  # reset rows if you want
+        self.table.setEditTriggers(QtWidgets.QAbstractItemView.AllEditTriggers)
+
+        # Clear result table
+        self.result_table.clearContents()
+        self.result_table.setRowCount(0)
+
+        # Clear memory blocks & update memory table
+        self.memory_blocks = [None] * self.total_blocks
+        self.update_memory_table()
+
+        # Reset internal states
+        self.sim_processes = []
+        self.ready_queue.clear()
+        self.sim_queue.clear()
+        self.running_processes = []
+        self.current_process = None
+        self.sim_time = 0
+        self.quantum_counter = 0
+
+        # Reset window title
+        self.setWindowTitle("PCB Scheduler Simulation")
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
