@@ -1,12 +1,35 @@
 
-import tkinter as tk
-from calculator import CalculatorWidget  # Adjust if you named it differently
 import subprocess
 import os
 import sys
+import tkinter as tk
+from calculator import CalculatorWidget  # Adjust if you named it differently
+from camera import CameraViewer
+Honey_screen = None  # You will assign this from your main IDE
+def set_main_screen(screen):
+    """Call this from IDE.py to inject the main window reference."""
+    global Honey_screen
+    global camera_viewer
+    Honey_screen = screen
+    camera_viewer = CameraViewer(Honey_screen)
+
 
 def open_editor():
     print("Editor opened!")
+
+camera_instance = None
+
+def open_camera():
+    global camera_instance
+    if camera_instance is None or not camera_instance.running:
+        camera_instance = CameraViewer(Honey_screen)
+        camera_instance.open_camera()
+
+def close_camera():
+    global camera_instance
+    if camera_instance is not None and camera_instance.running:
+        camera_instance.close_camera()
+        camera_instance = None
 
 
 # Globals (you can also use a better state manager if desired)
@@ -14,6 +37,7 @@ isCalculatorActive = False
 calculator = None
 Honey_screen = None  # You will assign this from your main IDE
 simulator_process = None  # To track the launched process
+
 
 def open_calculator():
     global isCalculatorActive, calculator, Honey_screen
@@ -66,6 +90,19 @@ def open_calculator():
 
     isCalculatorActive = True
 
+def close_calculator():
+    global isCalculatorActive, calculator
+    if calculator is not None:
+        calculator.destroy()
+        calculator = None
+        isCalculatorActive = False
+
+def close_calculator():
+    global isCalculatorActive, calculator
+    if calculator is not None:
+        calculator.destroy()
+        calculator = None
+        isCalculatorActive = False
 
 
 def open_simulator():
@@ -91,3 +128,11 @@ def set_main_screen(screen):
 
 def open_files():
     print("Files opened!")
+
+def take_picture():
+    global camera_viewer
+    print("hello")
+    if camera_viewer:
+        camera_viewer.take_picture()
+    else:
+        print("Camera viewer not initialized. Call set_main_screen() first.")

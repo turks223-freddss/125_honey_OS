@@ -78,15 +78,30 @@ HoneyLabel = Label(background_frame, text="Honey OS", font=custom_font, bg="#454
 #Shoving it into the Screen
 HoneyLabel.pack()
 
+def update_save_state():
+   global toolbar
+   if toolbar and hasattr(toolbar, 'save_btn'):
+      if unsaved_changes:
+         toolbar.save_btn.config(state=NORMAL)
+      else:
+         toolbar.save_btn.config(state=DISABLED)
+
+def update_status_label():
+   if status_label:
+      filename = "Unsaved Draft" if not file_state.get_file_path() else os.path.basename(file_state.get_file_path())
+      status_text = f"{'*' if unsaved_changes else ''}{filename}"
+      status_label.config(text=status_text)
 
 # Enables the button once it notice text in the editor
 def check_text_and_toggle_buttons(event=None):
   global unsaved_changes
   content = editor.get("1.0", END).strip()
-  if content:
-    unsaved_changes = True
-  else:
-    unsaved_changes = False
+
+  has_changes = bool(content)
+  if has_changes != unsaved_changes:
+    unsaved_changes = has_changes
+    update_save_state()
+    update_status_label()
 
 
 
@@ -115,11 +130,11 @@ icon_sizes = {
     "save_as": (30, 30),
     "copy": (30, 30),
     "paste": (30, 30),
-    "camera": (30, 30),
+    "camera": (5, 30),
     "cut": (30, 30),
     "undo": (30, 30),
     "redo": (30, 30),
-    "calculator": (30, 30),
+    "calculator": (5, 30),
     "close": (15, 15),
     "minimize": (15, 15)
 }
@@ -142,6 +157,8 @@ def open_new_file():
 
   display_voice_command_feedback(file_path)
   unsaved_changes = False
+  update_save_state()
+  update_status_label()
 
 
 # Opens an existing file
@@ -155,36 +172,90 @@ def open_existing_file():
       Honey_screen.title(f'Bluefire - {os.path.basename(path)}')  #change to edito scren
 
   unsaved_changes = False
+  update_save_state()
+  update_status_label()
 
 
 # This function is to save the content of the editor
 def save():
   file_operations.save(editor)
+  global unsaved_changes
+  unsaved_changes = False
+  update_save_state()
+  update_status_label()
 
 
 # This function saves the content of the editor to a new file
 def save_as():
   file_operations.save_as(editor)
+  update_status_label()
 
 
 def toggleEditor():
-    global isEditorActive
-    global editor
-    global editor_frame
+    global isEditorActive, editor, editor_frame, toolbar, status_label
 
     if isEditorActive == 1:
-      isEditorActive = 0
+      if unsaved_changes:
+         response = messagebox.askyesnocancel(
+            "Unsaved Changes",
+            "You have unsaved changes. Do you want to save before closing?"
+         )
+
+         if response:
+            save()
+            isEditorActive = 0
+
+         elif response is None:
+            return
+         
+         else:
+            isEditorActive = 0
+
     else:
-      isEditorActive = 1
-      
-    if isEditorActive == 1:
-      # Create a parent frame to hold both toolbar and editor
-      editor_frame = tk.Frame(Honey_screen)
-      editor_frame.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
+        isEditorActive = 1
 
-      # Create and pack the toolbar at the top of this frame
-      toolbar = ToolbarEditor(
-          editor_frame, icons=icons, callbacks={
+    # Create a floating, borderless, draggable window
+    editor_window = tk.Toplevel(Honey_screen)
+    editor_window.overrideredirect(True)
+    editor_window.geometry("500x400+150+150")
+
+    # === Header Frame (Draggable Title Bar) ===
+    header = tk.Frame(editor_window, bg="gray20")
+    header.pack(fill="x")
+
+    title = tk.Label(header, text="Editor", fg="white", bg="gray20", font=("Arial", 10, "bold"))
+    title.pack(side="left", padx=5)
+
+    def close_editor():
+        global isEditorActive, editor_window
+        isEditorActive = 0
+        editor_window.destroy()
+        editor_window = None
+
+    close_button = tk.Button(header, text="✖", command=close_editor,
+                             bg="red", fg="white", font=("Arial", 10, "bold"),
+                             bd=0, cursor="hand2")
+    close_button.pack(side="right", padx=5, pady=2)
+
+    # === Make Header Draggable ===
+    def start_move(event):
+        editor_window.x = event.x
+        editor_window.y = event.y
+
+    def do_move(event):
+        x = editor_window.winfo_x() + event.x - editor_window.x
+        y = editor_window.winfo_y() + event.y - editor_window.y
+        editor_window.geometry(f"+{x}+{y}")
+
+    header.bind("<ButtonPress-1>", start_move)
+    header.bind("<B1-Motion>", do_move)
+
+    # === Content Frame ===
+    content = tk.Frame(editor_window)
+    content.pack(fill=BOTH, expand=True)
+
+    # Toolbar
+    toolbar = ToolbarEditor(content, icons=icons, callbacks={
         "open_new_file": open_new_file,
         "open_existing_file": open_existing_file,
         "save": save,
@@ -194,9 +265,13 @@ def toggleEditor():
         "cut": cut_text,
         "undo": undo_text,
         "redo": redo_text
+
     }, create_tooltip=create_tooltip
       )
       toolbar.pack(side=TOP, fill=X)
+
+      status_label = Label(editor_frame, text="", anchor="w", fg="gray")
+      status_label.pack(fill=X, padx=5, pady=(0,5))
 
       # Create and pack the Text editor just below the toolbar
       editor = Text(editor_frame, undo=True, relief=FLAT)
@@ -208,34 +283,12 @@ def toggleEditor():
         editor_frame.destroy()
         editor.destroy()  # removes the widget completely
 
-def toggleCalculator():
-    global isCalculatorActive, calculator
-
-    if isCalculatorActive:
-        calculator.destroy()
-        isCalculatorActive = False
-        calculator = None
-    else:
-        calculator = tk.Toplevel(Honey_screen)  # Floating window
-        calculator.overrideredirect(True)       # Remove title bar for custom dragging
-        calculator.geometry("250x300+100+100")  # Initial size and position
-
-        widget = CalculatorWidget(calculator)
-        widget.pack(fill=tk.BOTH, expand=True)
-
-        # Bind mouse events to make it draggable
-        def start_move(event):
-            calculator.x = event.x
-            calculator.y = event.y
-
-        def do_move(event):
-            x = calculator.winfo_x() + event.x - calculator.x
-            y = calculator.winfo_y() + event.y - calculator.y
-            calculator.geometry(f"+{x}+{y}")
-
-        calculator.bind("<Button-1>", start_move)
-        calculator.bind("<B1-Motion>", do_move)
-        isCalculatorActive = True
+def closeEditor():
+    global isEditorActive, editor_window
+    if editor_window is not None:
+        isEditorActive = 0
+        editor_window.destroy()
+        editor_window = None
 
 cut_text = lambda: editor_actions.cut(editor)
 copy_text = lambda: editor_actions.copy(editor)
@@ -255,8 +308,6 @@ def close_window():
   Honey_screen.destroy()
 
 
-def minimize_window():
-  Honey_screen.iconify()
 
 
 ############################################################################################
@@ -286,29 +337,15 @@ def toggle_theme():
         for widget in toolbar.winfo_children():
             widget.config(bg=theme["button_bg"], activebackground=theme["button_bg"], fg=theme["fg"])
 
-    # Update voice command feedback if exists and not None
-    if 'voice_command_feedback' in globals() and voice_command_feedback is not None:
-        voice_command_feedback.config(bg=theme["output_bg"], fg=theme["output_fg"])
-
 toolbar = ToolbarTop(
     Honey_screen,
     icons=icons,
     callbacks={
-        "open_new_file": open_new_file,
-        "open_existing_file": open_existing_file,
-        "save": save,
-        "save_as": save_as,
-        "copy": copy_text,
-        "paste": paste_text,
-        "cut": cut_text,
-        "undo": undo_text,
-        "redo": redo_text,
         "close_window": close_window,
-        "minimize_window": minimize_window,
         "toggle_theme": toggle_theme,
         "activate_commands": lambda: None,  # Temporary placeholder
         "toggleEditor": toggleEditor,
-        "toggleCalculator": toggleCalculator,
+        "closeEditor": closeEditor,
         "open_camera": camera_viewer.open_camera
     },
     create_tooltip=create_tooltip
@@ -320,10 +357,12 @@ desktop.pack(fill="both", expand=True)
 
 
 
-desktop.add_icon("Editor", "OS GUI/assets/cross.png", apps.open_editor, (0, 0))
+desktop.add_icon("File Editor", "OS GUI/assets/new_file.png", toggleEditor, (0, 0))
 desktop.add_icon("Calculator", "OS GUI/assets/calculator.png", apps.open_calculator, (100, 0))
-desktop.add_icon("Files", "OS GUI/assets/existing_file.png", apps.open_files, (0, 100))
+
+desktop.add_icon("Camera", "OS GUI/assets/camera_icon.png", apps.open_camera, (0, 100))
 desktop.add_icon("Simulation", "OS GUI/assets/existing_file.png", apps.open_simulator, (0, 100))
+
 
 desktop.bind("<Button-1>", lambda e: DesktopIcon.selected_icon and DesktopIcon.selected_icon.deselect())
 
@@ -343,7 +382,7 @@ voice_widget.show_feedback("Say 'Honey' to activate commands...")
 voice_controller = VoiceController(
     toolbar=toolbar,
     icons=icons,
-    mic_icon=icons["microphone"],
+    mic_icon=icons["mic"],
     mic_listening_icon=icons["mic_listen"],
     display_feedback=voice_widget.show_feedback,
     calculator=calculator,
@@ -396,14 +435,10 @@ unsaved_changes = False
 
 def set_file_path(path):
   global file_path
-  file_path = path
+  file_state.set_file_path(path)
 
 
 screen_height = Honey_screen.winfo_screenheight()
-
-
-# Optionally bind to button
-toolbar.mic_btn.config(command=voice_controller.activate_commands)
 
 
 Honey_screen.attributes('-fullscreen', True)
