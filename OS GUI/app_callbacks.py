@@ -1,6 +1,9 @@
 
 import tkinter as tk
 from calculator import CalculatorWidget  # Adjust if you named it differently
+import subprocess
+import os
+import sys
 
 def open_editor():
     print("Editor opened!")
@@ -61,6 +64,13 @@ def open_calculator():
     widget.pack(fill=tk.BOTH, expand=True)
 
     isCalculatorActive = True
+
+
+
+def open_simulator():
+    simulator_path = os.path.join(os.path.dirname(__file__), '..', 'SCHEDULEGUI', 'PCB_scheduler_final.py')
+    simulator_path = os.path.abspath(simulator_path)  # Ensure full path
+    subprocess.Popen([sys.executable, simulator_path])
 
 
 def set_main_screen(screen):
