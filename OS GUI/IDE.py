@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import ttk
+import tkinter as tk
 from tkinter.filedialog import asksaveasfilename, askopenfilename
 import tkinter.messagebox
 from tkinter import messagebox
@@ -205,8 +206,26 @@ def toggleCalculator():
         isCalculatorActive = False
         calculator = None
     else:
-        calculator = CalculatorWidget(Honey_screen)
-        calculator.pack(side=RIGHT, fill=BOTH, expand=False, padx=10, pady=20)
+        calculator = tk.Toplevel(Honey_screen)  # Floating window
+        calculator.overrideredirect(True)       # Remove title bar for custom dragging
+        calculator.geometry("250x300+100+100")  # Initial size and position
+
+        widget = CalculatorWidget(calculator)
+        widget.pack(fill=tk.BOTH, expand=True)
+
+        # Bind mouse events to make it draggable
+        def start_move(event):
+            calculator.x = event.x
+            calculator.y = event.y
+
+        def do_move(event):
+            x = calculator.winfo_x() + event.x - calculator.x
+            y = calculator.winfo_y() + event.y - calculator.y
+            calculator.geometry(f"+{x}+{y}")
+
+        calculator.bind("<Button-1>", start_move)
+        calculator.bind("<B1-Motion>", do_move)
+
         isCalculatorActive = True
 
   
@@ -394,13 +413,13 @@ def listen_for_commands():
         text = r.recognize_google(audio_data).lower()
         if "honey" in text:
           print("Honey Test")
-          toolbar.mic_btn.config(image=mic_listening_icon)
-          toolbar.mic_btn.image = mic_listening_icon
+          toolbar.mic_btn.config(image=icon["mic_listen"])
+          toolbar.mic_btn.image = icon["mic_listen"]
           display_voice_command_feedback("Yes, dear?")
           voice_commands()  # Call the command processing function
           stop_listening()
-          toolbar.mic_btn.config(image=mic_icon)
-          toolbar.mic_btn.image = mic_icon
+          toolbar.mic_btn.config(image=icon["mic"])
+          toolbar.mic_btn.image = icon["mic"]
         
     
       except sr.UnknownValueError:
@@ -410,16 +429,16 @@ def listen_for_commands():
 
 
 def restore_mic_icon():
-    toolbar.mic_btn.config(image=mic_icon)
-    toolbar.mic_btn.image = mic_icon
+    toolbar.mic_btn.config(image=icon["mic"])
+    toolbar.mic_btn.image = icon["mic"]
 
 
 def activate_commands():
     # Start listening for commands in a separate thread
     threading.Thread(target=voice_commands, daemon=True).start()
     
-    toolbar.mic_btn.config(image=mic_listening_icon)
-    toolbar.mic_btn.image = mic_listening_icon
+    toolbar.mic_btn.config(image=icon["mic_listen"])
+    toolbar.mic_btn.image = icon["mic_listen"]
     
     display_voice_command_feedback("I'm here, dear. What can I do for you?")
 
