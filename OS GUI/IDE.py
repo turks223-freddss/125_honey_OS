@@ -16,12 +16,13 @@ import wave
 import cv2
 import time
 from calculator import CalculatorWidget
+from bluefire_ide import file_operations, file_state, editor_actions
 from camera import CameraViewer
 from StartUp import StartUp
 from tooltip import create_tooltip
 from iconpaths import icon
 from resize import resize_icon
-from toolbar import ToolbarTop
+from toolbar import ToolbarTop, ToolbarEditor
 from voice_commands import VoiceController
 from taskbar import Taskbar
 from desktop import Desktop
@@ -78,6 +79,17 @@ HoneyLabel = Label(background_frame, text="Honey OS", font=custom_font, bg="#454
 HoneyLabel.pack()
 
 
+# Enables the button once it notice text in the editor
+def check_text_and_toggle_buttons(event=None):
+  global unsaved_changes
+  content = editor.get("1.0", END).strip()
+  if content:
+    unsaved_changes = True
+  else:
+    unsaved_changes = False
+
+
+
 isEditorActive = 0
 isCalculatorActive = 0
 if isEditorActive == 1:
@@ -123,13 +135,10 @@ icons = {
 
 # Open new file
 def open_new_file():
-  global file_path
-  global unsaved_changes
+  global file_path, unsaved_changes
   
   # editor = create_tab(title= 'Untitled')
   editor.delete('1.0', END)
-  file_path = ''
-  Honey_screen.title('Bluefire - New File')
 
   display_voice_command_feedback(file_path)
   unsaved_changes = False
@@ -137,86 +146,66 @@ def open_new_file():
 
 # Opens an existing file
 def open_existing_file():
-  global file_path
-  global unsaved_changes
+  global file_path, unsaved_changes
 
-  code = editor.get('1.0', END).strip()
+  file_operations.open_file(editor)
+  path = file_state.get_file_path()
 
-  if code:
-    tkinter.messagebox.showerror("Unable to Save", "Do you want to save changes?")
-  path = askopenfilename(filetypes=[('Bluefire Files', '*.blu')])
   if path:
-    with open(path, 'r') as file:
-      code = file.read()
+      Honey_screen.title(f'Bluefire - {os.path.basename(path)}')  #change to edito scren
 
-      editor.delete('1.0', END)
-      # editor = create_tab(content=code, title=os.path.basename(path))
-
-      editor.insert('1.0', code)
-      set_file_path(path)
-      Honey_screen.title(f'Bluefire - {os.path.basename(path)}')
-
-      display_voice_command_feedback(path)
   unsaved_changes = False
 
 
 # This function is to save the content of the editor
 def save():
-  global file_path
-  global unsaved_changes
-
-  code = editor.get('1.0', END).strip()
-  if code:
-    # toggle_button_state(save_btn, DISABLED)
-    tkinter.messagebox.showerror("Unable to Save", "Do you want to save changes?")
-    return
-  if not file_path:
-    path = asksaveasfilename(filetypes=[('Bluefire Files', '*.blu')])
-  else:
-    path = file_path
-  if not path:
-    return
-  if not path.endswith('.blu'):
-    path += '.blu'
-  with open(path, 'w') as file:
-    file.write(code)
-    set_file_path(path)
-  unsaved_changes = False
+  file_operations.save(editor)
 
 
 # This function saves the content of the editor to a new file
 def save_as():
-  global unsaved_changes
-
-  code = editor.get('1.0', END).strip()
-  if not code:
-    tkinter.messagebox.showerror("Unable to Save", "There is no content to save.")
-    return
-  path = asksaveasfilename(filetypes=[('Bluefire Files', '*.blu')])
-  if not path:
-    return
-  if not path.endswith('.blu'):
-    path += '.blu'
-  with open(path, 'w') as file:
-    file.write(code)
-    set_file_path(path)
-  unsaved_changes = False
+  file_operations.save_as(editor)
 
 
 def toggleEditor():
     global isEditorActive
     global editor
-    
+    global editor_frame
+
     if isEditorActive == 1:
       isEditorActive = 0
     else:
       isEditorActive = 1
       
     if isEditorActive == 1:
-        editor = Text(Honey_screen, undo=True, relief=FLAT)
-        editor.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
-        editor.bind('<Key>', check_text_and_toggle_buttons)
+      # Create a parent frame to hold both toolbar and editor
+      editor_frame = tk.Frame(Honey_screen)
+      editor_frame.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
+
+      # Create and pack the toolbar at the top of this frame
+      toolbar = ToolbarEditor(
+          editor_frame, icons=icons, callbacks={
+        "open_new_file": open_new_file,
+        "open_existing_file": open_existing_file,
+        "save": save,
+        "save_as": save_as,
+        "copy": copy_text,
+        "paste": paste_text,
+        "cut": cut_text,
+        "undo": undo_text,
+        "redo": redo_text
+    }, create_tooltip=create_tooltip
+      )
+      toolbar.pack(side=TOP, fill=X)
+
+      # Create and pack the Text editor just below the toolbar
+      editor = Text(editor_frame, undo=True, relief=FLAT)
+      editor.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
+
+      # Bind any required events
+      editor.bind('<Key>', check_text_and_toggle_buttons)
     else:
+        editor_frame.destroy()
         editor.destroy()  # removes the widget completely
 
 def toggleCalculator():
@@ -248,26 +237,11 @@ def toggleCalculator():
         calculator.bind("<B1-Motion>", do_move)
         isCalculatorActive = True
 
-  
-
-def cut_text():
-  editor.event_generate("<<Cut>>")
-
-
-def copy_text():
-  editor.event_generate("<<Copy>>")
-
-
-def paste_text():
-  editor.event_generate("<<Paste>>")
-
-
-def undo_text():
-  editor.edit_undo()
-
-
-def redo_text():
-  editor.edit_redo()
+cut_text = lambda: editor_actions.cut(editor)
+copy_text = lambda: editor_actions.copy(editor)
+paste_text = lambda: editor_actions.paste(editor)
+undo_text = lambda: editor_actions.undo(editor)
+redo_text = lambda: editor_actions.redo(editor)
 
   
 def close_window():
@@ -423,14 +397,16 @@ def set_file_path(path):
   global file_path
   file_path = path
 
-# Enables the button once it notice text in the editor
-def check_text_and_toggle_buttons(event=None):
-  global unsaved_changes
-  content = editor.get("1.0", END).strip()
-  if content:
-    unsaved_changes = True
-  else:
-    unsaved_changes = False
+
+############################################################################################
+######                      TOOLBAR  |  BUTTONS                       ######
+############################################################################################
+
+# Voice command feedback area
+voice_command_feedback = Text(Honey_screen, height=3, font = Font(family="Courier New", size=20, weight="bold"), state=DISABLED, bg=light_theme["output_bg"], fg=light_theme["output_fg"])
+voice_command_feedback.pack(side=BOTTOM, fill=X)
+voice_command_feedback.config()
+
 
 screen_height = Honey_screen.winfo_screenheight()
 

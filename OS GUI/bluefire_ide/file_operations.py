@@ -2,7 +2,30 @@
 
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 import tkinter.messagebox
+from tkinter import END
+import os
 from .file_state import set_file_path, get_file_path
+
+
+def open_new_file(editor, window, disabled_buttons_fn, display_feedback_fn):
+    editor.delete('1.0', END)
+    set_file_path('')  # Clear file path in shared state
+    window.title('Bluefire - New File')
+    display_feedback_fn('New file created.')
+    disabled_buttons_fn('disabled')
+
+def open_existing_file(editor, window, disabled_buttons_fn):
+    from tkinter.filedialog import askopenfilename
+    path = askopenfilename()
+
+    if path:
+        with open(path, 'r', encoding='utf-8') as file:
+            content = file.read()
+            editor.delete('1.0', END)
+            editor.insert('1.0', content)
+            set_file_path(path)
+            window.title(f'Bluefire - {os.path.basename(path)}')
+            disabled_buttons_fn('disabled')
 
 # Opens a .txt file and inserts it into the editor
 def open_file(editor):

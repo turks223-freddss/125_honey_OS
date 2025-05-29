@@ -1,6 +1,13 @@
 # bluefire_ide/ui_elements.py
 
-from tkinter import Text
+from tkinter import Text, Button, Frame, LEFT, FLAT
+from tooltip import ToolTip, create_tooltip
+from iconpaths import icon
+from bluefire_ide import file_operations, editor_actions
+from bluefire_ide.file_operations import save, save_as, open_file, open_existing_file, open_new_file
+from bluefire_ide.editor_actions import copy, cut, paste, undo, redo
+
+
 
 # Creates the text editor for writing code
 def create_editor(parent):
