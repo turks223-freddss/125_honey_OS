@@ -17,6 +17,10 @@ class ToolbarTop(Toolbar):
         self.close_btn.pack(side=RIGHT, padx=5, pady=2)
         self.create_tooltip(self.close_btn, "Exit")
 
+        self.mic_btn = tk.Button(self, image=self.icons["mic"], command=self.callbacks["activate_commands"], relief=FLAT)
+        self.mic_btn.image = self.icons["mic"]
+        self.mic_btn.pack(side=RIGHT, padx=2, pady=2)
+        self.create_tooltip(self.mic_btn, "Listen")
 
         # Toggle Theme Button
         toggle_theme_btn = tk.Button(self, text="Theme", command=self.callbacks["toggle_theme"], relief=FLAT)

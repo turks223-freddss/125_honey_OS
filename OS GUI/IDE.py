@@ -241,7 +241,12 @@ def toggleEditor():
     # Bind text event
     editor.bind('<Key>', check_text_and_toggle_buttons)
 
-
+def closeEditor():
+    global isEditorActive, editor_window
+    if editor_window is not None:
+        isEditorActive = 0
+        editor_window.destroy()
+        editor_window = None
 
 cut_text = lambda: editor_actions.cut(editor)
 copy_text = lambda: editor_actions.copy(editor)
@@ -307,6 +312,7 @@ toolbar = ToolbarTop(
         "toggle_theme": toggle_theme,
         "activate_commands": lambda: None,  # Temporary placeholder
         "toggleEditor": toggleEditor,
+        "closeEditor": closeEditor,
         "open_camera": camera_viewer.open_camera
     },
     create_tooltip=create_tooltip
@@ -343,7 +349,7 @@ voice_widget.show_feedback("Say 'Honey' to activate commands...")
 voice_controller = VoiceController(
     toolbar=toolbar,
     icons=icons,
-    mic_icon=icons["microphone"],
+    mic_icon=icons["mic"],
     mic_listening_icon=icons["mic_listen"],
     display_feedback=voice_widget.show_feedback,
     calculator=calculator,
