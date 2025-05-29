@@ -350,7 +350,7 @@ desktop.add_icon("Calculator", "OS GUI/assets/cross.png", apps.open_calculator, 
 desktop.add_icon("Files", "OS GUI/assets/cross.png", apps.open_files, (0, 100))
 
 
-voice_widget = VoiceAssistantWidget(desktop, font_size=12)
+voice_widget = VoiceAssistantWidget(desktop, font_size=12, button_command=lambda: None,mic_icon=icons["mic"])
 desktop.add_widget(voice_widget, width=600, height=80)
 voice_widget.show_feedback("Say 'Honey' to activate commands...")
 
@@ -366,6 +366,7 @@ voice_controller = VoiceController(
     is_calculator_active=isCalculatorActive,
     is_dark_mode=is_dark_mode
 )
+voice_widget.action_button.config(command=voice_controller.activate_commands)
 
 voice_controller.start_listening()
 
