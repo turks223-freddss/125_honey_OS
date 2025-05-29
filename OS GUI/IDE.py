@@ -78,15 +78,30 @@ HoneyLabel = Label(background_frame, text="Honey OS", font=custom_font, bg="#454
 #Shoving it into the Screen
 HoneyLabel.pack()
 
+def update_save_state():
+   global toolbar
+   if toolbar and hasattr(toolbar, 'save_btn'):
+      if unsaved_changes:
+         toolbar.save_btn.config(state=NORMAL)
+      else:
+         toolbar.save_btn.config(state=DISABLED)
+
+def update_status_label():
+   if status_label:
+      filename = "Unsaved Draft" if not file_state.get_file_path() else os.path.basename(file_state.get_file_path())
+      status_text = f"{'*' if unsaved_changes else ''}{filename}"
+      status_label.config(text=status_text)
 
 # Enables the button once it notice text in the editor
 def check_text_and_toggle_buttons(event=None):
   global unsaved_changes
   content = editor.get("1.0", END).strip()
-  if content:
-    unsaved_changes = True
-  else:
-    unsaved_changes = False
+
+  has_changes = bool(content)
+  if has_changes != unsaved_changes:
+    unsaved_changes = has_changes
+    update_save_state()
+    update_status_label()
 
 
 
@@ -142,6 +157,8 @@ def open_new_file():
 
   display_voice_command_feedback(file_path)
   unsaved_changes = False
+  update_save_state()
+  update_status_label()
 
 
 # Opens an existing file
@@ -155,28 +172,45 @@ def open_existing_file():
       Honey_screen.title(f'Bluefire - {os.path.basename(path)}')  #change to edito scren
 
   unsaved_changes = False
+  update_save_state()
+  update_status_label()
 
 
 # This function is to save the content of the editor
 def save():
   file_operations.save(editor)
+  global unsaved_changes
+  unsaved_changes = False
+  update_save_state()
+  update_status_label()
 
 
 # This function saves the content of the editor to a new file
 def save_as():
   file_operations.save_as(editor)
+  update_status_label()
 
 
 def toggleEditor():
-    global isEditorActive
-    global editor
-    global editor_window
+    global isEditorActive, editor, editor_frame, toolbar, status_label
 
     if isEditorActive == 1:
-        isEditorActive = 0
-        editor_window.destroy()
-        editor_window = None
-        return
+      if unsaved_changes:
+         response = messagebox.askyesnocancel(
+            "Unsaved Changes",
+            "You have unsaved changes. Do you want to save before closing?"
+         )
+
+         if response:
+            save()
+            isEditorActive = 0
+
+         elif response is None:
+            return
+         
+         else:
+            isEditorActive = 0
+
     else:
         isEditorActive = 1
 
@@ -231,15 +265,23 @@ def toggleEditor():
         "cut": cut_text,
         "undo": undo_text,
         "redo": redo_text
-    }, create_tooltip=create_tooltip)
-    toolbar.pack(side=TOP, fill=X)
 
-    # Text Editor
-    editor = Text(content, undo=True, relief=FLAT)
-    editor.pack(side=LEFT, fill=BOTH, expand=True, padx=10, pady=10)
+    }, create_tooltip=create_tooltip
+      )
+      toolbar.pack(side=TOP, fill=X)
 
-    # Bind text event
-    editor.bind('<Key>', check_text_and_toggle_buttons)
+      status_label = Label(editor_frame, text="", anchor="w", fg="gray")
+      status_label.pack(fill=X, padx=5, pady=(0,5))
+
+      # Create and pack the Text editor just below the toolbar
+      editor = Text(editor_frame, undo=True, relief=FLAT)
+      editor.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
+
+      # Bind any required events
+      editor.bind('<Key>', check_text_and_toggle_buttons)
+    else:
+        editor_frame.destroy()
+        editor.destroy()  # removes the widget completely
 
 def closeEditor():
     global isEditorActive, editor_window
@@ -299,15 +341,6 @@ toolbar = ToolbarTop(
     Honey_screen,
     icons=icons,
     callbacks={
-        "open_new_file": open_new_file,
-        "open_existing_file": open_existing_file,
-        "save": save,
-        "save_as": save_as,
-        "copy": copy_text,
-        "paste": paste_text,
-        "cut": cut_text,
-        "undo": undo_text,
-        "redo": redo_text,
         "close_window": close_window,
         "toggle_theme": toggle_theme,
         "activate_commands": lambda: None,  # Temporary placeholder
@@ -402,7 +435,7 @@ unsaved_changes = False
 
 def set_file_path(path):
   global file_path
-  file_path = path
+  file_state.set_file_path(path)
 
 
 screen_height = Honey_screen.winfo_screenheight()
