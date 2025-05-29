@@ -17,22 +17,12 @@ class ToolbarTop(Toolbar):
         self.close_btn.pack(side=RIGHT, padx=5, pady=2)
         self.create_tooltip(self.close_btn, "Exit")
 
-        # Minimize Button
-        self.min_btn = tk.Button(self, image=self.icons["minimize"], command=self.callbacks["minimize_window"], relief=FLAT)
-        self.min_btn.image = self.icons["minimize"]
-        self.min_btn.pack(side=RIGHT, padx=2, pady=2)
-        self.create_tooltip(self.min_btn, "Minimize")
 
         # Toggle Theme Button
         toggle_theme_btn = tk.Button(self, text="Theme", command=self.callbacks["toggle_theme"], relief=FLAT)
         toggle_theme_btn.pack(side=RIGHT, pady=2)
         self.create_tooltip(toggle_theme_btn, "Light Mode / Dark Mode")
 
-        # Editor Button
-        self.editor_btn = tk.Button(self, image=self.icons["new_file"], command=self.callbacks["toggleEditor"], relief=FLAT)
-        self.editor_btn.image = self.icons["new_file"]
-        self.editor_btn.pack(side=RIGHT, padx=2, pady=2)
-        self.create_tooltip(self.editor_btn, "Editor")
 
 
 class ToolbarEditor(Toolbar):

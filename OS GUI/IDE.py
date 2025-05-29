@@ -261,8 +261,6 @@ def close_window():
   Honey_screen.destroy()
 
 
-def minimize_window():
-  Honey_screen.iconify()
 
 
 ############################################################################################
@@ -306,7 +304,6 @@ toolbar = ToolbarTop(
         "undo": undo_text,
         "redo": redo_text,
         "close_window": close_window,
-        "minimize_window": minimize_window,
         "toggle_theme": toggle_theme,
         "activate_commands": lambda: None,  # Temporary placeholder
         "toggleEditor": toggleEditor,
