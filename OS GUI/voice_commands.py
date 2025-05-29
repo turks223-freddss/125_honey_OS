@@ -107,7 +107,7 @@ class VoiceController:
                 elif "calculator" in command_text:
                     self.toolbar.commands["toggleCalculator"]()
                 elif"open simulation" in command_text:
-                    apps.open_simulator
+                    apps.open_simulator()
                     print("hello")
 
             except sr.WaitTimeoutError:
