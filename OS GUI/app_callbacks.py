@@ -1,18 +1,34 @@
 
-import tkinter as tk
-from calculator import CalculatorWidget  # Adjust if you named it differently
 import subprocess
 import os
 import sys
+import tkinter as tk
+from calculator import CalculatorWidget  # Adjust if you named it differently
+
+from camera import CameraViewer
+
+Honey_screen = None  # You will assign this from your main IDE
+def set_main_screen(screen):
+    """Call this from IDE.py to inject the main window reference."""
+    global Honey_screen
+    Honey_screen = screen
+
+
 
 def open_editor():
     print("Editor opened!")
 
+camera_instance = None
+
+def open_camera():
+    global camera_instance
+    if camera_instance is None or not camera_instance.running:
+        camera_instance = CameraViewer(Honey_screen)
+        camera_instance.open_camera()
 
 # Globals (you can also use a better state manager if desired)
 isCalculatorActive = False
 calculator = None
-Honey_screen = None  # You will assign this from your main IDE
 
 def open_calculator():
     global isCalculatorActive, calculator, Honey_screen
@@ -64,6 +80,7 @@ def open_calculator():
     widget.pack(fill=tk.BOTH, expand=True)
 
     isCalculatorActive = True
+
 
 
 
