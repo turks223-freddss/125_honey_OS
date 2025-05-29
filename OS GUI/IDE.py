@@ -77,15 +77,22 @@ HoneyLabel = Label(background_frame, text="Honey OS", font=custom_font, bg="#454
 #Shoving it into the Screen
 HoneyLabel.pack()
 
-
+def update_save_state():
+   global toolbar
+   if toolbar and hasattr(toolbar, 'save_btn'):
+      if unsaved_changes:
+         toolbar.save_btn.config(state=NORMAL)
+      else:
+         toolbar.save_btn.config(state=DISABLED)
 # Enables the button once it notice text in the editor
 def check_text_and_toggle_buttons(event=None):
   global unsaved_changes
   content = editor.get("1.0", END).strip()
-  if content:
-    unsaved_changes = True
-  else:
-    unsaved_changes = False
+
+  has_changes = bool(content)
+  if has_changes != unsaved_changes:
+    unsaved_changes = has_changes
+    update_save_state()
 
 
 
@@ -141,6 +148,7 @@ def open_new_file():
 
   display_voice_command_feedback(file_path)
   unsaved_changes = False
+  update_save_state()
 
 
 # Opens an existing file
@@ -154,11 +162,15 @@ def open_existing_file():
       Honey_screen.title(f'Bluefire - {os.path.basename(path)}')  #change to edito scren
 
   unsaved_changes = False
+  update_save_state()
 
 
 # This function is to save the content of the editor
 def save():
   file_operations.save(editor)
+  global unsaved_changes
+  unsaved_changes = False
+  update_save_state()
 
 
 # This function saves the content of the editor to a new file
@@ -167,9 +179,7 @@ def save_as():
 
 
 def toggleEditor():
-    global isEditorActive
-    global editor
-    global editor_frame
+    global isEditorActive, editor, editor_frame, toolbar
 
     if isEditorActive == 1:
       isEditorActive = 0
