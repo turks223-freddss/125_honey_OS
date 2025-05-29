@@ -8,6 +8,8 @@ class Desktop(tk.Frame):
         self.icons = []
         self.occupied_cells = set()
 
+        
+
         self.bind("<Configure>", self._on_resize)
         self.width = 0
         self.height = 0
@@ -17,7 +19,6 @@ class Desktop(tk.Frame):
         self.height = event.height
 
     def _grid_cell(self, x, y):
-        """Convert pixel position to grid cell."""
         return (x // self.grid_size, y // self.grid_size)
 
     def _is_occupied(self, x, y):
@@ -49,4 +50,28 @@ class Desktop(tk.Frame):
                         return
 
             print("No space available for icon.")
+        place_when_ready()
+
+    def add_widget(self, widget, width, height, margin=20):
+        def place_when_ready():
+            if self.width <= 1 or self.height <= 1:
+                self.after(50, place_when_ready)
+                return
+
+            x = self.width - width - margin
+            y = self.height - height - margin
+            widget.place(x=x, y=y, width=width, height=height)
+
+            widget.lift()
+
+            # Optionally mark its occupied grid cells if needed
+            start_col = x // self.grid_size
+            end_col = (x + width) // self.grid_size
+            start_row = y // self.grid_size
+            end_row = (y + height) // self.grid_size
+
+            for col in range(start_col, end_col + 1):
+                for row in range(start_row, end_row + 1):
+                    self._mark_occupied(col, row)
+
         place_when_ready()

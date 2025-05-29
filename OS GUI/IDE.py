@@ -26,6 +26,7 @@ from voice_commands import VoiceController
 from taskbar import Taskbar
 from desktop import Desktop
 import app_callbacks as apps
+from voicewidget import VoiceAssistantWidget
 
 honeyBoot = StartUp(
         path="OS GUI/assets/Final.mp4",  # Adjust path if needed
@@ -283,21 +284,6 @@ def minimize_window():
   Honey_screen.iconify()
 
 
-# def maximize_window():
-#     Honey_screen.state('zoomed')
-
-
-
-def display_voice_command_feedback(text):
-  # Clear previous feedback
-  voice_command_feedback.config(state=NORMAL)
-  voice_command_feedback.delete('1.0', END)
-
-  # Display new feedback
-  voice_command_feedback.insert('1.0', text)
-  voice_command_feedback.config(state=DISABLED)
-
-
 ############################################################################################
 ######                                                               ######
 ############################################################################################
@@ -359,18 +345,29 @@ desktop.pack(fill="both", expand=True)
 
 
 
+desktop.add_icon("Editor", "OS GUI/assets/cross.png", apps.open_editor, (0, 0))
+desktop.add_icon("Calculator", "OS GUI/assets/cross.png", apps.open_calculator, (100, 0))
+desktop.add_icon("Files", "OS GUI/assets/cross.png", apps.open_files, (0, 100))
+
+
+voice_widget = VoiceAssistantWidget(desktop, font_size=12)
+desktop.add_widget(voice_widget, width=600, height=80)
+voice_widget.show_feedback("Say 'Honey' to activate commands...")
+
 # Step 2: Now create voice_controller with toolbar available
 voice_controller = VoiceController(
     toolbar=toolbar,
     icons=icons,
     mic_icon=icons["microphone"],
     mic_listening_icon=icons["mic_listen"],
-    display_feedback=display_voice_command_feedback,
+    display_feedback=voice_widget.show_feedback,
     calculator=calculator,
     editor=editor,
     is_calculator_active=isCalculatorActive,
     is_dark_mode=is_dark_mode
 )
+
+voice_controller.start_listening()
 
 # Step 3: Update the command binding now that voice_controller exists
 toolbar.commands["activate_commands"] = voice_controller.activate_commands
@@ -424,24 +421,11 @@ def check_text_and_toggle_buttons(event=None):
   else:
     unsaved_changes = False
 
-# Voice command feedback area
-voice_command_feedback = Text(Honey_screen, height=3, font = Font(family="Courier New", size=20, weight="bold"), state=DISABLED, bg=light_theme["output_bg"], fg=light_theme["output_fg"])
-voice_command_feedback.pack(side=BOTTOM, fill=X)
-voice_command_feedback.config()
-
 screen_height = Honey_screen.winfo_screenheight()
 
-# Start the passive listener
-voice_controller.start_listening()
 
 # Optionally bind to button
 toolbar.mic_btn.config(command=voice_controller.activate_commands)
-
-# Add icons and connect to callbacks
-desktop.add_icon("Editor", "OS GUI/assets/cross.png", apps.open_editor, (0, 0))
-desktop.add_icon("Calculator", "OS GUI/assets/cross.png", apps.open_calculator, (100, 0))
-desktop.add_icon("Files", "OS GUI/assets/cross.png", apps.open_files, (0, 100))
-
 
 
 Honey_screen.attributes('-fullscreen', True)
