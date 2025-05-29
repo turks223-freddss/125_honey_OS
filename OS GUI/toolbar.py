@@ -1,13 +1,60 @@
 import tkinter as tk
 from tkinter import LEFT, RIGHT, FLAT, X
 
-class ToolbarTop(tk.Frame):
+class Toolbar(tk.Frame):
     def __init__(self, master, icons, callbacks, create_tooltip, **kwargs):
         super().__init__(master, relief=FLAT, **kwargs)
         self.commands = callbacks
         self.icons = icons
         self.callbacks = callbacks
         self.create_tooltip = create_tooltip
+class ToolbarTop(Toolbar):
+    def __init__(self, master, icons, callbacks, create_tooltip, **kwargs):
+        super().__init__(master, icons, callbacks, create_tooltip, **kwargs)
+        # Exit Button
+        self.close_btn = tk.Button(self, image=self.icons["close"], command=self.callbacks["close_window"], relief=FLAT)
+        self.close_btn.image = self.icons["close"]
+        self.close_btn.pack(side=RIGHT, padx=5, pady=2)
+        self.create_tooltip(self.close_btn, "Exit")
+
+        # Minimize Button
+        self.min_btn = tk.Button(self, image=self.icons["minimize"], command=self.callbacks["minimize_window"], relief=FLAT)
+        self.min_btn.image = self.icons["minimize"]
+        self.min_btn.pack(side=RIGHT, padx=2, pady=2)
+        self.create_tooltip(self.min_btn, "Minimize")
+
+        # Toggle Theme Button
+        toggle_theme_btn = tk.Button(self, text="Theme", command=self.callbacks["toggle_theme"], relief=FLAT)
+        toggle_theme_btn.pack(side=RIGHT, pady=2)
+        self.create_tooltip(toggle_theme_btn, "Light Mode / Dark Mode")
+
+        # Mic Button
+        self.mic_btn = tk.Button(self, image=self.icons["microphone"], command=self.callbacks["activate_commands"], relief=FLAT)
+        self.mic_btn.image = self.icons["microphone"]
+        self.mic_btn.pack(side=RIGHT, padx=2, pady=2)
+        self.create_tooltip(self.mic_btn, "Listen")
+
+        # Editor Button
+        self.editor_btn = tk.Button(self, image=self.icons["new_file"], command=self.callbacks["toggleEditor"], relief=FLAT)
+        self.editor_btn.image = self.icons["new_file"]
+        self.editor_btn.pack(side=RIGHT, padx=2, pady=2)
+        self.create_tooltip(self.editor_btn, "Editor")
+
+        # Calculator Button
+        self.calculator_btn = tk.Button(self, image=self.icons["calculator"], command=self.callbacks["toggleCalculator"], relief=FLAT)
+        self.calculator_btn.image = self.icons["calculator"]
+        self.calculator_btn.pack(side=RIGHT, padx=2, pady=2)
+        self.create_tooltip(self.calculator_btn, "Calculator")
+
+        # Camera Button
+        self.camera_btn = tk.Button(self, image=self.icons["camera"], command=self.callbacks["open_camera"], relief=FLAT)
+        self.camera_btn.image = self.icons["camera"]
+        self.camera_btn.pack(side=RIGHT, padx=2, pady=2)
+        self.create_tooltip(self.camera_btn, "Open Camera")
+
+class ToolbarEditor(Toolbar):
+    def __init__(self, master, icons, callbacks, create_tooltip, **kwargs):
+        super().__init__(master, icons, callbacks, create_tooltip, **kwargs)
 
         # New File Button
         new_file_btn = tk.Button(self, image=self.icons["new_file"], command=self.callbacks["open_new_file"], relief=FLAT)
@@ -62,44 +109,4 @@ class ToolbarTop(tk.Frame):
         self.redo_btn.image = self.icons["redo"]
         self.redo_btn.pack(side=LEFT, padx=2, pady=2)
         self.create_tooltip(self.redo_btn, "Redo")
-
-        # Exit Button
-        self.close_btn = tk.Button(self, image=self.icons["close"], command=self.callbacks["close_window"], relief=FLAT)
-        self.close_btn.image = self.icons["close"]
-        self.close_btn.pack(side=RIGHT, padx=5, pady=2)
-        self.create_tooltip(self.close_btn, "Exit")
-
-        # Minimize Button
-        self.min_btn = tk.Button(self, image=self.icons["minimize"], command=self.callbacks["minimize_window"], relief=FLAT)
-        self.min_btn.image = self.icons["minimize"]
-        self.min_btn.pack(side=RIGHT, padx=2, pady=2)
-        self.create_tooltip(self.min_btn, "Minimize")
-
-        # Toggle Theme Button
-        toggle_theme_btn = tk.Button(self, text="Theme", command=self.callbacks["toggle_theme"], relief=FLAT)
-        toggle_theme_btn.pack(side=RIGHT, pady=2)
-        self.create_tooltip(toggle_theme_btn, "Light Mode / Dark Mode")
-
-        # Mic Button
-        self.mic_btn = tk.Button(self, image=self.icons["microphone"], command=self.callbacks["activate_commands"], relief=FLAT)
-        self.mic_btn.image = self.icons["microphone"]
-        self.mic_btn.pack(side=RIGHT, padx=2, pady=2)
-        self.create_tooltip(self.mic_btn, "Listen")
-
-        # Editor Button
-        self.editor_btn = tk.Button(self, image=self.icons["new_file"], command=self.callbacks["toggleEditor"], relief=FLAT)
-        self.editor_btn.image = self.icons["new_file"]
-        self.editor_btn.pack(side=RIGHT, padx=2, pady=2)
-        self.create_tooltip(self.editor_btn, "Editor")
-
-        # Calculator Button
-        self.calculator_btn = tk.Button(self, image=self.icons["calculator"], command=self.callbacks["toggleCalculator"], relief=FLAT)
-        self.calculator_btn.image = self.icons["calculator"]
-        self.calculator_btn.pack(side=RIGHT, padx=2, pady=2)
-        self.create_tooltip(self.calculator_btn, "Calculator")
-
-        # Camera Button
-        self.camera_btn = tk.Button(self, image=self.icons["camera"], command=self.callbacks["open_camera"], relief=FLAT)
-        self.camera_btn.image = self.icons["camera"]
-        self.camera_btn.pack(side=RIGHT, padx=2, pady=2)
-        self.create_tooltip(self.camera_btn, "Open Camera")
+    

@@ -21,7 +21,7 @@ from StartUp import StartUp
 from tooltip import create_tooltip
 from iconpaths import icon
 from resize import resize_icon
-from toolbar import ToolbarTop
+from toolbar import ToolbarTop, ToolbarEditor
 from voice_commands import VoiceController
 
 honeyBoot = StartUp(
@@ -70,6 +70,17 @@ background_frame.pack(fill="x", side="top", anchor="ne")
 HoneyLabel = Label(background_frame, text="Honey OS", font=custom_font, bg="#454543", fg="#FFFFFF")
 #Shoving it into the Screen
 HoneyLabel.pack()
+
+
+# Enables the button once it notice text in the editor
+def check_text_and_toggle_buttons(event=None):
+  global unsaved_changes
+  content = editor.get("1.0", END).strip()
+  if content:
+    unsaved_changes = True
+  else:
+    unsaved_changes = False
+
 
 
 isEditorActive = 0
@@ -200,17 +211,42 @@ def save_as():
 def toggleEditor():
     global isEditorActive
     global editor
-    
+    global editor_frame
+
     if isEditorActive == 1:
       isEditorActive = 0
     else:
       isEditorActive = 1
       
     if isEditorActive == 1:
-        editor = Text(Honey_screen, undo=True, relief=FLAT)
-        editor.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
-        editor.bind('<Key>', check_text_and_toggle_buttons)
+      # Create a parent frame to hold both toolbar and editor
+      editor_frame = tk.Frame(Honey_screen)
+      editor_frame.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
+
+      # Create and pack the toolbar at the top of this frame
+      toolbar = ToolbarEditor(
+          editor_frame, icons=icons, callbacks={
+        "open_new_file": open_new_file,
+        "open_existing_file": open_existing_file,
+        "save": save,
+        "save_as": save_as,
+        "copy": copy_text,
+        "paste": paste_text,
+        "cut": cut_text,
+        "undo": undo_text,
+        "redo": redo_text
+    }, create_tooltip=create_tooltip
+      )
+      toolbar.pack(side=TOP, fill=X)
+
+      # Create and pack the Text editor just below the toolbar
+      editor = Text(editor_frame, undo=True, relief=FLAT)
+      editor.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
+
+      # Bind any required events
+      editor.bind('<Key>', check_text_and_toggle_buttons)
     else:
+        editor_frame.destroy()
         editor.destroy()  # removes the widget completely
 
 def toggleCalculator():
@@ -405,32 +441,9 @@ def set_file_path(path):
   global file_path
   file_path = path
 
-
-############################################################################################
-######                                                               ######
-############################################################################################
-
-############################################################################################
-######                                                               ######
-############################################################################################
-
-
-# Enables the button once it notice text in the editor
-def check_text_and_toggle_buttons(event=None):
-  global unsaved_changes
-  content = editor.get("1.0", END).strip()
-  if content:
-    unsaved_changes = True
-  else:
-    unsaved_changes = False
-
-
-
-
 ############################################################################################
 ######                      TOOLBAR  |  BUTTONS                       ######
 ############################################################################################
-
 
 # Voice command feedback area
 voice_command_feedback = Text(Honey_screen, height=3, font = Font(family="Courier New", size=20, weight="bold"), state=DISABLED, bg=light_theme["output_bg"], fg=light_theme["output_fg"])
