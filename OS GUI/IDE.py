@@ -194,7 +194,21 @@ def toggleEditor():
     global isEditorActive, editor, editor_frame, toolbar, status_label
 
     if isEditorActive == 1:
-      isEditorActive = 0
+      if unsaved_changes:
+         response = messagebox.askyesnocancel(
+            "Unsaved Changes",
+            "You have unsaved changes. Do you want to save before closing?"
+         )
+
+         if response:
+            save()
+            isEditorActive = 0
+
+         elif response is None:
+            return
+         
+         else:
+            isEditorActive = 0
     else:
       isEditorActive = 1
       
