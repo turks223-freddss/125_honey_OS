@@ -10,8 +10,9 @@ def sjf(pcb_array, current_index, num_processes, update_gui_signal):
     # Add the current process control block to the array
     sjf_pcb_array.append(pcb_array[current_index])
 
-    # Emit signal to update the GUI table
-    update_gui_signal.emit(sjf_pcb_array)
+    # if update_gui_signal:
+    #     # Emit signal to update the GUI table
+    #     update_gui_signal.emit(sjf_pcb_array)
 
     # Start the processing of the processes
     processing(num_processes, current_index, update_gui_signal)
@@ -46,8 +47,9 @@ def processing(num_processes, current_index, update_gui_signal):
                 # Remove terminated PCBs from the array
                 sjf_pcb_array = [pcb for pcb in sjf_pcb_array if pcb.get_status() != "Terminate"]
 
-                # Emit signal to update the GUI table
-                update_gui_signal.emit(sjf_pcb_array)
+                # # Emit signal to update the GUI table
+                # if update_gui_signal:
+                #     update_gui_signal.emit(sjf_pcb_array)
 
                 time.sleep(1)
             break  # Exit the outer loop once all processes are terminated
@@ -66,9 +68,9 @@ def processing(num_processes, current_index, update_gui_signal):
 
                 # Remove terminated PCBs from the array
                 sjf_pcb_array = [pcb for pcb in sjf_pcb_array if pcb.get_status() != "Terminate"]
-
-                # Emit signal to update the GUI table
-                update_gui_signal.emit(sjf_pcb_array)
+                # if update_gui_signal:
+                #     # Emit signal to update the GUI table
+                #     update_gui_signal.emit(sjf_pcb_array)
 
                 time.sleep(1)
             else:
@@ -87,9 +89,9 @@ def processing(num_processes, current_index, update_gui_signal):
 
                 # Remove terminated PCBs from the array
                 sjf_pcb_array = [pcb for pcb in sjf_pcb_array if pcb.get_status() != "Terminate"]
-
-                # Emit signal to update the GUI table
-                update_gui_signal.emit(sjf_pcb_array)
+                # if update_gui_signal:
+                #     # Emit signal to update the GUI table
+                #     update_gui_signal.emit(sjf_pcb_array)
 
                 time.sleep(1)
             return
