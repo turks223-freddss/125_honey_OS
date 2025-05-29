@@ -141,7 +141,7 @@ class Taskbar(tk.Frame):
             # Menu items: (label, callback)
             menu_items = [
                 ("📁 Files", lambda: self._launch_app_from_menu("Files")),
-                ("🖥️ Terminal", lambda: self._launch_app_from_menu("Terminal")),
+                ("⏻ Shutdown ", lambda: self._launch_app_from_menu("Terminal")),
                 ("⚙️ Settings", lambda: self._launch_app_from_menu("Settings")),
             ]
 
