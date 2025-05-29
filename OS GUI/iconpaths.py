@@ -1,0 +1,19 @@
+icon = {
+    "new_file": "OS GUI/assets/new_file.png",
+    "open_file": "OS GUI/assets/existing_file.png",
+    "microphone": "OS GUI/assets/microphone.png",
+    "save": "OS GUI/assets/save.png",
+    "save_as": "OS GUI/assets/save_as.png",
+    "copy": "OS GUI/assets/copy.png",
+    "paste": "OS GUI/assets/clipboard.png",
+    "cut": "OS GUI/assets/scissors.png",
+    "undo": "OS GUI/assets/refresh.png",
+    "redo": "OS GUI/assets/redo.png",
+    "mic": "OS GUI/assets/mic.png",
+    "close": "OS GUI/assets/cross.png",
+    "minimize": "OS GUI/assets/minimize.png",
+    "background": "OS GUI/assets/background.png",
+    "mic_listen": "OS GUI/assets/mic_listen.png",
+    "calculator": "OS GUI/assets/Calculator.png",
+    "camera": "OS GUI/assets/camera_icon.png"
+}
