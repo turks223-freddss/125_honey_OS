@@ -100,10 +100,10 @@ class VoiceController:
                     if self.is_dark_mode:
                         self.is_dark_mode = not self.is_dark_mode
                         self.toolbar.commands["toggle_theme"]()
-                elif "minimize please" in command_text:
-                    self.toolbar.commands["minimize"]()
+                #elif "minimize please" in command_text:
+                    #self.toolbar.commands["minimize"]()
                 elif command_text in ["exit please", "shut up", "avada kedavra", "yamete"]:
-                    self.toolbar.commands["close"]()
+                    apps.shutdown()
                 elif "open editor" in command_text:
                     self.toolbar.commands["toggleEditor"]()
                 elif"open simulation" in command_text:

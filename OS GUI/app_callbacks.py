@@ -87,6 +87,9 @@ def open_calculator():
 
     isCalculatorActive = True
 
+def shutdown():
+    Honey_screen.destroy()
+
 def close_calculator():
     global isCalculatorActive, calculator
     if calculator is not None:
