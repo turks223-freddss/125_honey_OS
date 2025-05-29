@@ -38,9 +38,8 @@ def save():
             
         if not path.endswith('.blu'):  # Add .blu extension if not already present
             path += '.blu'
-            file_path = path
-        else:
-            path = file_path
+        file_path = path
+
     
     with open(path, 'w') as file:
         file.write(code)
@@ -51,22 +50,20 @@ def save():
 def save_as():
     code = editor.get('1.0', END).strip()
     if not code:
-        # You can provide a message to the user or handle the empty content scenario here
         tkinter.messagebox.showerror("Unable to Save", "There is no content to save.")
         return
-    
-    path = file_path
 
-    if not path.endswith('.blu'):  # Add .blu extension if not already present
+    path = asksaveasfilename(filetypes=[('Blue Files', '*.blu')])
+    if not path:
+        return
+
+    if not path.endswith('.blu'):
         path += '.blu'
-        file_path = path
-    else:
-        path = file_path
-    
+
     with open(path, 'w') as file:
-        code = editor.get('1.0', END)
         file.write(code)
         set_file_path(path)
+
 
 def run():
     if file_path == '':
@@ -76,7 +73,7 @@ def run():
         return
     
     command = f'python {file_path}'
-    process = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = TRUE)
+    process = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True)
     output, error =  process. communicate()
     code_output.insert('1.0', output)
     code_output.insert('1.0', error)
