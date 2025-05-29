@@ -1,4 +1,5 @@
 from tkinter import *
+import tkinter as tk
 from tkinter import ttk
 from tkinter.filedialog import asksaveasfilename, askopenfilename
 import tkinter.messagebox
@@ -14,75 +15,29 @@ import pyaudio
 import wave
 import cv2
 import time
-from bluefire_ide import file_operations, file_state, main, ui_elements, runner, editor_actions
 from calculator import CalculatorWidget
-from bluefire_ide.ui_elements import create_editor_toolbar, create_editor
-from tooltips import ToolTip, createToolTip
-from icons import iconsD, resize_icon
+from camera import CameraViewer
+from StartUp import StartUp
+from tooltip import create_tooltip
+from iconpaths import icon
+from resize import resize_icon
+from toolbar import ToolbarTop
+from voice_commands import VoiceController
 
+honeyBoot = StartUp(
+        path="OS GUI/assets/Final.mp4",  # Adjust path if needed
+        window_size=(780, 518),
+        duration=2,
+        fullscreen=False  # or True if you prefer fullscreen
+    )
+honeyBoot.play()
 
-
-def play_video(path, window_size):
-  cap = cv2.VideoCapture(path)
-
-  if not cap.isOpened():
-    print("Error: Could not open video.")
-    return
-
-  cv2.namedWindow('Video', cv2.WINDOW_NORMAL)
-
-  cv2.setWindowProperty('Video', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-
-  # Resize the window to the specified size
-  cv2.resizeWindow('Video', window_size[0], window_size[1])
-
-  # Use tkinter to get the screen size
-  root = tkinter.Tk()
-  screen_width = root.winfo_screenwidth()
-  screen_height = root.winfo_screenheight()
-  root.destroy()
-
-  # Calculate the position to center the window
-  x_position = (screen_width - window_size[0]) // 2
-  y_position = ((screen_height - window_size[1]) // 2) + (-10)
-
-  # Move the window to the center of the screen
-  cv2.moveWindow('Video', x_position, y_position)
-
-  start_time = time.time()  # Capture the start time
-
-  while True:
-    ret, frame = cap.read()
-    if not ret:
-      print("Reached end of video or error occurred. Exiting.")
-      break
-
-    frame = cv2.resize(frame, window_size, interpolation=cv2.INTER_AREA)
-    cv2.imshow('Video', frame)
-
-    # Check if 14 seconds have passed
-    if time.time() - start_time > 1:
-      break
-
-    if cv2.waitKey(15) & 0xFF == ord('q') or cv2.getWindowProperty(
-        'Video', cv2.WND_PROP_VISIBLE) < 1:
-      break
-
-  cap.release()
-  cv2.destroyAllWindows()
-
-
-# Declare the window size before calling the function
-window_size = (780, 518)  # Width, Height
-video_path = 'OS GUI/assets/Final.mp4'
-play_video(video_path, window_size)
 
 Honey_screen = Tk()
 Honey_screen.title('Bluefire IDE')
 file_path = ''
-
+camera_viewer = CameraViewer(Honey_screen)
 background_image_path = 'OS GUI/assets/background2.png'
-
 Honey_screen_width = Honey_screen.winfo_screenwidth()
 Honey_screen_height = Honey_screen.winfo_screenheight()
 
@@ -99,33 +54,9 @@ background_label = Label(Honey_screen, image=bg_photo)
 background_label.place(x=0, y=0, relwidth=1, relheight=1)
 background_label.image = bg_photo  #keep a reference
 
-
-#################### COPIED FUNCTIONS #############################
-#Microphone Activate Commands
-
-def stop_listening():
-    global listening
-    listening = False
-
-def activate_commands():
-    # Start listening for commands in a separate thread
-    threading.Thread(target=voice_commands, daemon=True).start()
-
-    mic_btn.config(image=iconsD['mic_listen'])
-    mic_btn.image = iconsD['mic_listen']
-    display_voice_command_feedback("I'm here, dear. What can I do for you?")
-
-    # After a short delay, return the mic button to normal state
-    restore_mic_icon()
-
-
-
-
-open_microp_path = 'OS GUI/assets/microphone.png'
-open_microp_icon = resize_icon(open_microp_path, size=(130, 130))
-
-
-
+editor = None
+calculator = None
+is_dark_mode = False
 ####################################################################
 
 #Create a custom font
@@ -139,6 +70,302 @@ background_frame.pack(fill="x", side="top", anchor="ne")
 HoneyLabel = Label(background_frame, text="Honey OS", font=custom_font, bg="#454543", fg="#FFFFFF")
 #Shoving it into the Screen
 HoneyLabel.pack()
+
+
+isEditorActive = 0
+isCalculatorActive = 0
+if isEditorActive == 1:
+  editor = Text(Honey_screen, undo=True, relief=FLAT)
+  editor.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
+  editor.bind('<Key>', check_text_and_toggle_buttons)
+
+if isCalculatorActive == 1:
+  calculator = CalculatorWidget(Honey_screen)
+  calculator.pack(side=RIGHT, fill=BOTH, expand=False, padx=10, pady=20)
+
+############################################################################################
+######                         PATH AND ICONS                         ######
+############################################################################################
+
+icon_sizes = {
+    "new_file": (30, 30),
+    "open_file": (30, 30),
+    "microphone": (30, 30),
+    "mic_listen": (30, 30),
+    "open_microphone": (130, 130),
+    "save": (30, 30),
+    "save_as": (30, 30),
+    "copy": (30, 30),
+    "paste": (30, 30),
+    "camera": (30, 30),
+    "cut": (30, 30),
+    "undo": (30, 30),
+    "redo": (30, 30),
+    "calculator": (30, 30),
+    "close": (15, 15),
+    "minimize": (15, 15)
+}
+
+icons = {
+    key: resize_icon(icon[key], size=icon_sizes.get(key, (30, 30)))
+    for key in icon
+}
+
+############################################################################################
+######                         Button Functions                         ######
+############################################################################################
+
+# Open new file
+def open_new_file():
+  global file_path
+  global unsaved_changes
+  
+  # editor = create_tab(title= 'Untitled')
+  editor.delete('1.0', END)
+  file_path = ''
+  Honey_screen.title('Bluefire - New File')
+
+  display_voice_command_feedback(file_path)
+  unsaved_changes = False
+
+
+# Opens an existing file
+def open_existing_file():
+  global file_path
+  global unsaved_changes
+
+  code = editor.get('1.0', END).strip()
+
+  if code:
+    tkinter.messagebox.showerror("Unable to Save", "Do you want to save changes?")
+  path = askopenfilename(filetypes=[('Bluefire Files', '*.blu')])
+  if path:
+    with open(path, 'r') as file:
+      code = file.read()
+
+      editor.delete('1.0', END)
+      # editor = create_tab(content=code, title=os.path.basename(path))
+
+      editor.insert('1.0', code)
+      set_file_path(path)
+      Honey_screen.title(f'Bluefire - {os.path.basename(path)}')
+
+      display_voice_command_feedback(path)
+  unsaved_changes = False
+
+
+# This function is to save the content of the editor
+def save():
+  global file_path
+  global unsaved_changes
+
+  code = editor.get('1.0', END).strip()
+  if code:
+    # toggle_button_state(save_btn, DISABLED)
+    tkinter.messagebox.showerror("Unable to Save", "Do you want to save changes?")
+    return
+  if not file_path:
+    path = asksaveasfilename(filetypes=[('Bluefire Files', '*.blu')])
+  else:
+    path = file_path
+  if not path:
+    return
+  if not path.endswith('.blu'):
+    path += '.blu'
+  with open(path, 'w') as file:
+    file.write(code)
+    set_file_path(path)
+  unsaved_changes = False
+
+
+# This function saves the content of the editor to a new file
+def save_as():
+  global unsaved_changes
+
+  code = editor.get('1.0', END).strip()
+  if not code:
+    tkinter.messagebox.showerror("Unable to Save", "There is no content to save.")
+    return
+  path = asksaveasfilename(filetypes=[('Bluefire Files', '*.blu')])
+  if not path:
+    return
+  if not path.endswith('.blu'):
+    path += '.blu'
+  with open(path, 'w') as file:
+    file.write(code)
+    set_file_path(path)
+  unsaved_changes = False
+
+
+def toggleEditor():
+    global isEditorActive
+    global editor
+    
+    if isEditorActive == 1:
+      isEditorActive = 0
+    else:
+      isEditorActive = 1
+      
+    if isEditorActive == 1:
+        editor = Text(Honey_screen, undo=True, relief=FLAT)
+        editor.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
+        editor.bind('<Key>', check_text_and_toggle_buttons)
+    else:
+        editor.destroy()  # removes the widget completely
+
+def toggleCalculator():
+    global isCalculatorActive, calculator
+
+    if isCalculatorActive:
+        calculator.destroy()
+        isCalculatorActive = False
+        calculator = None
+    else:
+        calculator = tk.Toplevel(Honey_screen)  # Floating window
+        calculator.overrideredirect(True)       # Remove title bar for custom dragging
+        calculator.geometry("250x300+100+100")  # Initial size and position
+
+        widget = CalculatorWidget(calculator)
+        widget.pack(fill=tk.BOTH, expand=True)
+
+        # Bind mouse events to make it draggable
+        def start_move(event):
+            calculator.x = event.x
+            calculator.y = event.y
+
+        def do_move(event):
+            x = calculator.winfo_x() + event.x - calculator.x
+            y = calculator.winfo_y() + event.y - calculator.y
+            calculator.geometry(f"+{x}+{y}")
+
+        calculator.bind("<Button-1>", start_move)
+        calculator.bind("<B1-Motion>", do_move)
+        isCalculatorActive = True
+
+  
+
+def cut_text():
+  editor.event_generate("<<Cut>>")
+
+
+def copy_text():
+  editor.event_generate("<<Copy>>")
+
+
+def paste_text():
+  editor.event_generate("<<Paste>>")
+
+
+def undo_text():
+  editor.edit_undo()
+
+
+def redo_text():
+  editor.edit_redo()
+
+  
+def close_window():
+  # global file_path
+  if isEditorActive == 1:
+    code = editor.get('1.0', END).strip()
+    if code:
+      tkinter.messagebox.showerror("Unable to Save", "Do you want to save changes?")
+      save()
+      Honey_screen.destroy()
+  Honey_screen.destroy()
+
+
+def minimize_window():
+  Honey_screen.iconify()
+
+
+# def maximize_window():
+#     Honey_screen.state('zoomed')
+
+
+
+def display_voice_command_feedback(text):
+  # Clear previous feedback
+  voice_command_feedback.config(state=NORMAL)
+  voice_command_feedback.delete('1.0', END)
+
+  # Display new feedback
+  voice_command_feedback.insert('1.0', text)
+  voice_command_feedback.config(state=DISABLED)
+
+
+############################################################################################
+######                                                               ######
+############################################################################################
+
+
+# This is a toggle for the light and dark theme
+def toggle_theme():
+    global is_dark_mode
+    is_dark_mode = not is_dark_mode  # Toggle the theme flag
+
+    # Determine the current theme based on the is_dark_mode flag
+    theme = dark_theme if is_dark_mode else light_theme
+
+    # Update main window background
+    if Honey_screen is not None:
+        Honey_screen.config(bg=theme["bg"])
+
+    # Update editor if exists and not None
+    if 'editor' in globals() and editor is not None:
+        editor.config(bg=theme["editor_bg"], fg=theme["editor_fg"], insertbackground=theme["fg"])
+
+    # Update toolbar and its children (buttons)
+    if toolbar is not None:
+        toolbar.config(bg=theme["toolbar_bg"])
+        for widget in toolbar.winfo_children():
+            widget.config(bg=theme["button_bg"], activebackground=theme["button_bg"], fg=theme["fg"])
+
+    # Update voice command feedback if exists and not None
+    if 'voice_command_feedback' in globals() and voice_command_feedback is not None:
+        voice_command_feedback.config(bg=theme["output_bg"], fg=theme["output_fg"])
+
+toolbar = ToolbarTop(
+    Honey_screen,
+    icons=icons,
+    callbacks={
+        "open_new_file": open_new_file,
+        "open_existing_file": open_existing_file,
+        "save": save,
+        "save_as": save_as,
+        "copy": copy_text,
+        "paste": paste_text,
+        "cut": cut_text,
+        "undo": undo_text,
+        "redo": redo_text,
+        "close_window": close_window,
+        "minimize_window": minimize_window,
+        "toggle_theme": toggle_theme,
+        "activate_commands": lambda: None,  # Temporary placeholder
+        "toggleEditor": toggleEditor,
+        "toggleCalculator": toggleCalculator,
+        "open_camera": camera_viewer.open_camera
+    },
+    create_tooltip=create_tooltip
+)
+toolbar.pack(side="top", fill="x")
+
+# Step 2: Now create voice_controller with toolbar available
+voice_controller = VoiceController(
+    toolbar=toolbar,
+    icons=icons,
+    mic_icon=icons["microphone"],
+    mic_listening_icon=icons["mic_listen"],
+    display_feedback=display_voice_command_feedback,
+    calculator=calculator,
+    editor=editor,
+    is_calculator_active=isCalculatorActive,
+    is_dark_mode=is_dark_mode
+)
+
+# Step 3: Update the command binding now that voice_controller exists
+toolbar.commands["activate_commands"] = voice_controller.activate_commands
+
 
 ############################################################################################
 ######                              DICTIONARY                          ######
@@ -173,415 +400,37 @@ dark_theme = {
 # A flag to help keep track of the buttons
 unsaved_changes = False
 
-#light mode default
-is_dark_mode = False
 
-# Create the toolbar
-toolbar = create_editor_toolbar(Honey_screen)
-toolbar.pack(side="top", fill="x")
+def set_file_path(path):
+  global file_path
+  file_path = path
 
 
 ############################################################################################
 ######                                                               ######
 ############################################################################################
 
-
-def close_window():
-  # global file_path
-  if isEditorActive == 1:
-    code = editor.get('1.0', END).strip()
-    if code:
-      tkinter.messagebox.showerror("Unable to Save", "Do you want to save changes?")
-      file_operations.save()
-      Honey_screen.destroy()
-  Honey_screen.destroy()
-
-
-def minimize_window():
-  Honey_screen.iconify()
-
-
-# def maximize_window():
-#     Honey_screen.state('zoomed')
-
-# class ToolTip(object):
-
-#   def __init__(self, widget):
-#     self.widget = widget
-#     self.tipwindow = None
-#     self.x = self.y = 0
-#     self.text = None  # Add a text attribute to store the tooltip text
-
-#   def showtip(self, text):
-#     """Display text in tooltip window"""
-#     self.text = text  # Store the text to be displayed in the tooltip
-#     if self.tipwindow or not self.text:
-#       return
-
-#     self.tipwindow = tw = Toplevel(self.widget)
-#     x, y, cx, cy = self.widget.bbox("insert")
-#     x = x + self.widget.winfo_rootx()  # Adjust the x-coordinate as needed
-#     # Position below the widget: start at the widget's bottom-left corner
-#     y = y + self.widget.winfo_rooty() + self.widget.winfo_height()
-
-#     tw.wm_overrideredirect(True)
-#     tw.wm_geometry("+%d+%d" % (x, y))
-#     label = Label(
-#         tw,
-#         text=self.text,
-#         justify=LEFT,  # Use self.text here
-#         background="#ffffe0",
-#         relief=SOLID,
-#         borderwidth=1,
-#         font=("tahpma", "10", "normal"))
-#     label.pack(ipadx=1)
-
-#   def hidetip(self):
-#     if self.tipwindow:
-#       self.tipwindow.destroy()
-#       self.tipwindow = None
-
-
-# def createToolTip(widget, text):
-#   toolTip = ToolTip(widget)
-
-#   def enter(event):
-#     toolTip.showtip(text)
-
-#   def leave(event):
-#     toolTip.hidetip()
-
-#   widget.bind('<Enter>', enter)
-#   widget.bind('<Leave>', leave)
-
-
-def display_voice_command_feedback(text):
-  # Clear previous feedback
-  voice_command_feedback.config(state=NORMAL)
-  voice_command_feedback.delete('1.0', END)
-
-  # Display new feedback
-  voice_command_feedback.insert('1.0', text)
-  voice_command_feedback.config(state=DISABLED)
-
-
-def listen_for_commands():
-  r = sr.Recognizer()
-  with sr.Microphone() as source:
-    r.adjust_for_ambient_noise(source)
-    print("Say 'Honey' to activate commands...")
-    while True:
-      print("Test")
-      try:
-        audio_data = r.listen(source)
-        text = r.recognize_google(audio_data).lower()
-        if "honey" in text:
-          print("Honey Test")
-          mic_btn.config(image=iconsD['mic_listen'])
-          mic_btn.image = iconsD['mic_listen']
-          display_voice_command_feedback("Yes, dear?")
-          voice_commands()  # Call the command processing function
-          stop_listening()
-          mic_btn.config(image=iconsD['mic_icon'])
-          mic_btn.image = iconsD['mic_icon']
-        
-    
-      except sr.UnknownValueError:
-        pass
-      except sr.RequestError as e:
-        print(f"Sorry, dear. I unfortunately can't do that... ({e})")
-
-
-def restore_mic_icon():
-    mic_btn.config(image=iconsD['mic_icon'])
-    mic_btn.image = iconsD['mic_icon']
-
-
-def activate_commands():
-    # Start listening for commands in a separate thread
-    threading.Thread(target=voice_commands, daemon=True).start()
-    
-    mic_btn.config(image=iconsD['mic_listen'])
-    mic_btn.image = iconsD['mic_listen']
-    
-    display_voice_command_feedback("I'm here, dear. What can I do for you?")
-
-
-
-def voice_commands():
-  global listening
-  global is_dark_mode
-  r = sr.Recognizer()
-  with sr.Microphone() as source:
-    try:
-      audio_data = r.listen(source, timeout=5)
-      command_text = r.recognize_google(audio_data).lower()
-      display_voice_command_feedback(
-          f"Okay, dear. Let me quickly do that for you... ({command_text})")
-
-      ############################################################################################
-      ######                         VOICE COMMANDS                         ######
-      ############################################################################################
-
-      # open a new file
-      if isCalculatorActive == 1:
-        if "calculator" in command_text.lower():
-          toggleCalculator()
-        else:  
-          calculator.set_input_from_string(command_text.lower())
-      elif "new file please" in command_text.lower():
-        file_operations.open_new_file()
-      # open an existing file
-      elif "existing file please" in command_text.lower():
-        file_operations.open_existing_file()
-      elif "abrihi" in command_text.lower():
-        file_operations.open_existing_file()
-      # save file
-      elif "save please" in command_text.lower():
-        file_operations.save()
-      #save as
-      elif "save as please" in command_text.lower():
-        file_operations.save_as()
-      elif "save us please" in command_text.lower():
-        file_operations.save_as()
-      # copy text
-      elif "copy please" in command_text.lower():
-        copy_text()
-      # cut text
-      elif "cut please" in command_text.lower():
-        cut_text()
-      # paste text
-      elif "paste please" in command_text.lower():
-        paste_text()
-      # undo text
-      elif "undo please" in command_text.lower():
-        undo_text()
-      # redo text
-      elif "redo please" in command_text.lower():
-        redo_text()
-      # change theme to dark mode
-      elif "dark mode please" in command_text.lower():
-        if not is_dark_mode:
-          toggle_theme()
-      elif "dark" in command_text.lower():
-        if not is_dark_mode:
-          toggle_theme()
-      # change theme to light mode
-      elif "light mode please" in command_text.lower():
-        if is_dark_mode:
-          toggle_theme()
-      elif "open the curtains please" in command_text.lower():
-        if is_dark_mode:
-          toggle_theme()
-      # minimize window
-      elif "minimize please" in command_text.lower():
-        minimize_window()
-      # close window
-      elif "exit please" in command_text.lower():
-        close_window()
-      elif "shut up" in command_text.lower():
-        close_window()
-      elif "avada kedavra" in command_text.lower():
-        close_window()
-      elif"yamete" in command_text.lower():
-        close_window()
-      elif"editor" in command_text.lower():
-        toggleEditor()
-      elif"calculator" in command_text.lower():
-        toggleCalculator()
-      
-
-    except Exception as e:
-      display_voice_command_feedback(
-          f"Sorry, dear. I didn't quite get that... ({str(e)})")
-    
-    stop_listening()
-    restore_mic_icon()
-
-
 ############################################################################################
 ######                                                               ######
 ############################################################################################
-
-
-def start_listening():
-  mic_btn.config()
-  threading.Thread(target=listen_for_commands, daemon=True).start()
 
 
 # Enables the button once it notice text in the editor
-
-############################################################################################
-######                         Button Functions                         ######
-############################################################################################
-
-# def create_tab(content=None, title='New Tab'):
-# #   Create a new tab with a text widget inside it
-#     new_tab = ttk.Frame(notebook)
-#     notebook.add(new_tab, text=title)
-#     # text_widget = Text(new_tab, undo=True, relief=FLAT)
-#     editor.pack(side='left', fill='both', expand=True)
-#     if content:
-#       editor.insert('end', content)
-      
-#     return editor
-
-# Open new file
-# def open_new_file():
-#   global file_path, unsaved_changes
-  
-#   # editor = create_tab(title= 'Untitled')
-#   editor.delete('1.0', END)
-#   file_path = ''
-#   Honey_screen.title('Bluefire - New File')
-
-#   display_voice_command_feedback(file_path)
-#   unsaved_changes = False
-#   disabled_buttons(DISABLED)
-
-
-# Opens an existing file
-# def open_existing_file():
-#   global file_path, unsaved_changes
-#   file_operations.open_file(editor)
-#   path = file_state.get_file_path()
-
-#   if path:
-#     Honey_screen.title(f'Bluefire - {os.path.basename(path)}')
-
-#   unsaved_changes = False
-#   disabled_buttons(DISABLED)
-
-
-# # This function is to save the content of the editor
-# def save():
-#   file_operations.save(editor)
-
-
-# # This function saves the content of the editor to a new file
-# def save_as():
-#   file_operations.save_as(editor)
-
-
-def toggleEditor():
-    global isEditorActive
-    global editor
-    
-    if isEditorActive == 1:
-      isEditorActive = 0
-    else:
-      isEditorActive = 1
-      
-    if isEditorActive == 1:
-      main.main()
-    else:
-        editor.destroy()  # removes the widget completely
-
-def toggleCalculator():
-  global isCalculatorActive, calculator
-  if isCalculatorActive == 1:
-    isCalculatorActive = 0
+def check_text_and_toggle_buttons(event=None):
+  global unsaved_changes
+  content = editor.get("1.0", END).strip()
+  if content:
+    unsaved_changes = True
   else:
-    isCalculatorActive = 1
-  
-  if isCalculatorActive == 1:
-    calculator = CalculatorWidget(Honey_screen)
-    calculator.pack(side=RIGHT, fill=BOTH, expand=False, padx=10, pady=20)
-  else:
-    calculator.destroy()
-  
-
-cut_text = lambda: editor_actions.cut(editor)
-copy_text = lambda: editor_actions.copy(editor)
-paste_text = lambda: editor_actions.paste(editor)
-undo_text = lambda: editor_actions.undo(editor)
-redo_text = lambda: editor_actions.redo(editor)
-
-############################################################################################
-######                                                               ######
-############################################################################################
+    unsaved_changes = False
 
 
-# This is a toggle for the light and dark theme
-def toggle_theme():
-  global is_dark_mode
-  is_dark_mode = not is_dark_mode  #Toggle the theme flag
-
-  #Determine the current theme based on the is_dark_mode flag
-  theme = dark_theme if is_dark_mode else light_theme
-
-  # Update main window background
-  Honey_screen.config(bg=theme["bg"])
-
-  # Update editor
-  if 'editor' in globals():
-    editor.config(bg=theme["editor_bg"], fg=theme["editor_fg"], insertbackground=theme["fg"])
-
-  # Update toolbar and its children (buttons)
-  toolbar.config(bg=theme["toolbar_bg"])
-  for widget in toolbar.winfo_children():
-    widget.config(bg=theme["button_bg"], activebackground=theme["button_bg"], fg=theme["fg"])
-
-  # Update voice command feedback and code output
-  voice_command_feedback.config(bg=theme["output_bg"], fg=theme["output_fg"])
-
-  #Update the Theme button text color
-  # toggle_theme_btn.config(fg=theme["fg"]) #Changes the text color
-
-
-# This function disables of the buttons
-# def disabled_buttons(state):
-#   save_btn.config(state=state)
-#   undo_btn.config(state=state)
-#   redo_btn.config(state=state)
-
-
-# def enable_buttons(state):
-#   save_as_btn.config(state=state)
-#   copy_btn.config(state=state)
-#   paste_btn.config(state=state)
-#   cut_btn.config(state=state)
 
 
 ############################################################################################
 ######                      TOOLBAR  |  BUTTONS                       ######
 ############################################################################################
 
-
-def create_toolbar_top():
-  # Toogle Button for theme
-  toggle_theme_btn = Button(toolbar, text="Theme", command=toggle_theme, relief=FLAT)
-  toggle_theme_btn.pack(side=RIGHT, pady=2)
-  createToolTip(toggle_theme_btn, "Light Mode / Dark Mode")
-
-  toolbar.pack(side=TOP, fill=X)
-
-  #Mic Button
-  global mic_btn
-  mic_btn = Button(toolbar, image=iconsD['mic_icon'], command=activate_commands, relief=FLAT)
-  mic_btn.image = iconsD['mic_icon']
-  mic_btn.pack (side="right", padx=2, pady=2)
-  createToolTip(mic_btn, "Listen")
-  #editor button
-  
-  global editor_btn
-  editor_btn = Button(toolbar, image=iconsD['new_file'], command=toggleEditor, relief=FLAT)
-  editor_btn.image = iconsD['new_file']
-  editor_btn.pack (side="right", padx=2, pady=2)
-  createToolTip(editor_btn, "Editor")
-  
-  global calculator_btn
-  calculator_btn = Button(toolbar, image=iconsD['calculator_icon'], command=toggleCalculator, relief=FLAT)
-  calculator_btn.image = iconsD['calculator_icon']
-  calculator_btn.pack (side="right", padx=2, pady=2)
-  createToolTip(calculator_btn, "calculator")
-  
-
-############################################################################################
-######                                                               ######
-############################################################################################
-
-create_toolbar_top()
 
 # Voice command feedback area
 voice_command_feedback = Text(Honey_screen, height=3, font = Font(family="Courier New", size=20, weight="bold"), state=DISABLED, bg=light_theme["output_bg"], fg=light_theme["output_fg"])
@@ -590,20 +439,11 @@ voice_command_feedback.config()
 
 screen_height = Honey_screen.winfo_screenheight()
 
-isEditorActive = 0
-isCalculatorActive = 0
-if isEditorActive == 1:
-  main.main()
+# Start the passive listener
+voice_controller.start_listening()
 
-if isCalculatorActive == 1:
-  calculator = CalculatorWidget(Honey_screen)
-  calculator.pack(side=RIGHT, fill=BOTH, expand=False, padx=10, pady=20)
-
-
-# disabled_buttons(DISABLED)
-# enable_buttons(DISABLED)
-
-start_listening()
+# Optionally bind to button
+toolbar.mic_btn.config(command=voice_controller.activate_commands)
 
 Honey_screen.attributes('-fullscreen', True)
 # Honey_screen.config(bg='#FFCF81')

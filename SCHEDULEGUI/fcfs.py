@@ -1,52 +1,51 @@
-import random
+import time
 
-# Function to find the waiting time for all processes
-def findWaitingTime(processes, n, bt, wt):
-    # Waiting time for first process is 0
-    wt[0] = 0
+# Global variable for the array of PCBs
+fcfs_pcb_array = []
 
-    # Calculating waiting time
-    for i in range(1, n):
-        wt[i] = bt[i - 1] + wt[i - 1]
+def fcfs(pcb_array, current_index, num_processes, update_gui_signal):
+    global fcfs_pcb_array
 
-# Function to calculate turn around time
-def findTurnAroundTime(processes, n, bt, wt, tat):
-    # Calculating turnaround time by adding bt[i] + wt[i]
-    for i in range(n):
-        tat[i] = bt[i] + wt[i]
+    # Add the current process control block to the array
+    fcfs_pcb_array.append(pcb_array[current_index])
+    if update_gui_signal:
+        # Emit signal to update the GUI table
+        update_gui_signal.emit(fcfs_pcb_array)
 
-# Function to calculate average time
-def findavgTime(processes, n, bt):
-    wt = [0] * n
-    tat = [0] * n
-    total_wt = 0
-    total_tat = 0
+    # Start the processing of the processes
+    processing_fcfs(num_processes, update_gui_signal)
 
-    # Function to find waiting time of all processes
-    findWaitingTime(processes, n, bt, wt)
+def processing_fcfs(num_processes, update_gui_signal):
+    global fcfs_pcb_array
 
-    # Function to find turn around time for all processes
-    findTurnAroundTime(processes, n, bt, wt, tat)
+    process_index = 0
+    while process_index < num_processes:
+        pcb = fcfs_pcb_array[process_index]
 
-    # Display processes along with all details
-    print("Processes Burst time Waiting time Turn around time")
+        # Skip if the process is already terminated (shouldn't happen, but safety check)
+        if pcb.get_status() == "Terminate":
+            process_index += 1
+            continue
 
-    # Calculate total waiting time and total turn around time
-    for i in range(n):
-        total_wt = total_wt + wt[i]
-        total_tat = total_tat + tat[i]
-        print(" " + str(i + 1) + "\t\t" + str(bt[i]) + "\t " + str(wt[i]) + "\t\t " + str(tat[i]))
+        # Set process to running
+        pcb.change_status("Running")
+        if update_gui_signal:
+            update_gui_signal.emit(fcfs_pcb_array)
 
-    print("Average waiting time = " + str(total_wt / n))
-    print("Average turn around time = " + str(total_tat / n))
+        # Simulate running by decrementing burst until 0
+        while pcb.get_burst() > 0:
+            pcb.burst_decrement()
+            if update_gui_signal:
+                update_gui_signal.emit(fcfs_pcb_array)
+            time.sleep(1)
 
-# Driver code
-if __name__ == "__main__":
-    # Process ids
-    processes = [1, 2, 3]
-    n = len(processes)
+        # Terminate when done
+        terminate_process(pcb)
+        if update_gui_signal:
+            update_gui_signal.emit(fcfs_pcb_array)
 
-    # Randomly generated burst time for all processes
-    burst_time = [random.randint(1, 15) for _ in range(n)]
+        process_index += 1
 
-    findavgTime(processes, n, burst_time)
+def terminate_process(pcb):
+    pcb.change_status("Terminate")
+    pcb.burst_time = 0
