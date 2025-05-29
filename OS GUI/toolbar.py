@@ -4,7 +4,7 @@ from tkinter import LEFT, RIGHT, FLAT, X
 class ToolbarTop(tk.Frame):
     def __init__(self, master, icons, callbacks, create_tooltip, **kwargs):
         super().__init__(master, relief=FLAT, **kwargs)
-
+        self.commands = callbacks
         self.icons = icons
         self.callbacks = callbacks
         self.create_tooltip = create_tooltip
