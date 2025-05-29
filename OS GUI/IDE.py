@@ -28,6 +28,7 @@ from taskbar import Taskbar
 from desktop import Desktop
 import app_callbacks as apps
 from voicewidget import VoiceAssistantWidget
+from desktop_icon import DesktopIcon
 
 honeyBoot = StartUp(
         path="OS GUI/assets/Final.mp4",  # Adjust path if needed
@@ -58,7 +59,7 @@ background_label = Label(Honey_screen, image=bg_photo)
 background_label.place(x=0, y=0, relwidth=1, relheight=1)
 background_label.image = bg_photo  #keep a reference
 
-
+apps.set_main_screen(Honey_screen) 
 
 editor = None
 calculator = None
@@ -129,11 +130,11 @@ icon_sizes = {
     "save_as": (30, 30),
     "copy": (30, 30),
     "paste": (30, 30),
-    "camera": (30, 30),
+    "camera": (5, 30),
     "cut": (30, 30),
     "undo": (30, 30),
     "redo": (30, 30),
-    "calculator": (30, 30),
+    "calculator": (5, 30),
     "close": (15, 15),
     "minimize": (15, 15)
 }
@@ -209,17 +210,52 @@ def toggleEditor():
          
          else:
             isEditorActive = 0
-    else:
-      isEditorActive = 1
-      
-    if isEditorActive == 1:
-      # Create a parent frame to hold both toolbar and editor
-      editor_frame = tk.Frame(Honey_screen)
-      editor_frame.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
 
-      # Create and pack the toolbar at the top of this frame
-      toolbar = ToolbarEditor(
-          editor_frame, icons=icons, callbacks={
+    else:
+        isEditorActive = 1
+
+    # Create a floating, borderless, draggable window
+    editor_window = tk.Toplevel(Honey_screen)
+    editor_window.overrideredirect(True)
+    editor_window.geometry("500x400+150+150")
+
+    # === Header Frame (Draggable Title Bar) ===
+    header = tk.Frame(editor_window, bg="gray20")
+    header.pack(fill="x")
+
+    title = tk.Label(header, text="Editor", fg="white", bg="gray20", font=("Arial", 10, "bold"))
+    title.pack(side="left", padx=5)
+
+    def close_editor():
+        global isEditorActive, editor_window
+        isEditorActive = 0
+        editor_window.destroy()
+        editor_window = None
+
+    close_button = tk.Button(header, text="✖", command=close_editor,
+                             bg="red", fg="white", font=("Arial", 10, "bold"),
+                             bd=0, cursor="hand2")
+    close_button.pack(side="right", padx=5, pady=2)
+
+    # === Make Header Draggable ===
+    def start_move(event):
+        editor_window.x = event.x
+        editor_window.y = event.y
+
+    def do_move(event):
+        x = editor_window.winfo_x() + event.x - editor_window.x
+        y = editor_window.winfo_y() + event.y - editor_window.y
+        editor_window.geometry(f"+{x}+{y}")
+
+    header.bind("<ButtonPress-1>", start_move)
+    header.bind("<B1-Motion>", do_move)
+
+    # === Content Frame ===
+    content = tk.Frame(editor_window)
+    content.pack(fill=BOTH, expand=True)
+
+    # Toolbar
+    toolbar = ToolbarEditor(content, icons=icons, callbacks={
         "open_new_file": open_new_file,
         "open_existing_file": open_existing_file,
         "save": save,
@@ -229,6 +265,7 @@ def toggleEditor():
         "cut": cut_text,
         "undo": undo_text,
         "redo": redo_text
+
     }, create_tooltip=create_tooltip
       )
       toolbar.pack(side=TOP, fill=X)
@@ -246,34 +283,12 @@ def toggleEditor():
         editor_frame.destroy()
         editor.destroy()  # removes the widget completely
 
-def toggleCalculator():
-    global isCalculatorActive, calculator
-
-    if isCalculatorActive:
-        calculator.destroy()
-        isCalculatorActive = False
-        calculator = None
-    else:
-        calculator = tk.Toplevel(Honey_screen)  # Floating window
-        calculator.overrideredirect(True)       # Remove title bar for custom dragging
-        calculator.geometry("250x300+100+100")  # Initial size and position
-
-        widget = CalculatorWidget(calculator)
-        widget.pack(fill=tk.BOTH, expand=True)
-
-        # Bind mouse events to make it draggable
-        def start_move(event):
-            calculator.x = event.x
-            calculator.y = event.y
-
-        def do_move(event):
-            x = calculator.winfo_x() + event.x - calculator.x
-            y = calculator.winfo_y() + event.y - calculator.y
-            calculator.geometry(f"+{x}+{y}")
-
-        calculator.bind("<Button-1>", start_move)
-        calculator.bind("<B1-Motion>", do_move)
-        isCalculatorActive = True
+def closeEditor():
+    global isEditorActive, editor_window
+    if editor_window is not None:
+        isEditorActive = 0
+        editor_window.destroy()
+        editor_window = None
 
 cut_text = lambda: editor_actions.cut(editor)
 copy_text = lambda: editor_actions.copy(editor)
@@ -293,8 +308,6 @@ def close_window():
   Honey_screen.destroy()
 
 
-def minimize_window():
-  Honey_screen.iconify()
 
 
 ############################################################################################
@@ -324,20 +337,15 @@ def toggle_theme():
         for widget in toolbar.winfo_children():
             widget.config(bg=theme["button_bg"], activebackground=theme["button_bg"], fg=theme["fg"])
 
-    # Update voice command feedback if exists and not None
-    if 'voice_command_feedback' in globals() and voice_command_feedback is not None:
-        voice_command_feedback.config(bg=theme["output_bg"], fg=theme["output_fg"])
-
 toolbar = ToolbarTop(
     Honey_screen,
     icons=icons,
     callbacks={
         "close_window": close_window,
-        "minimize_window": minimize_window,
         "toggle_theme": toggle_theme,
         "activate_commands": lambda: None,  # Temporary placeholder
         "toggleEditor": toggleEditor,
-        "toggleCalculator": toggleCalculator,
+        "closeEditor": closeEditor,
         "open_camera": camera_viewer.open_camera
     },
     create_tooltip=create_tooltip
@@ -349,10 +357,22 @@ desktop.pack(fill="both", expand=True)
 
 
 
-desktop.add_icon("Editor", "OS GUI/assets/cross.png", apps.open_editor, (0, 0))
-desktop.add_icon("Calculator", "OS GUI/assets/cross.png", apps.open_calculator, (100, 0))
-desktop.add_icon("Files", "OS GUI/assets/cross.png", apps.open_files, (0, 100))
+desktop.add_icon("File Editor", "OS GUI/assets/new_file.png", toggleEditor, (0, 0))
+desktop.add_icon("Calculator", "OS GUI/assets/calculator.png", apps.open_calculator, (100, 0))
 
+desktop.add_icon("Camera", "OS GUI/assets/camera_icon.png", apps.open_camera, (0, 100))
+desktop.add_icon("Simulation", "OS GUI/assets/existing_file.png", apps.open_simulator, (0, 100))
+
+
+desktop.bind("<Button-1>", lambda e: DesktopIcon.selected_icon and DesktopIcon.selected_icon.deselect())
+
+
+def clear_selection(event):
+        if DesktopIcon.selected_icon:
+            DesktopIcon.selected_icon.deselect()
+            DesktopIcon.selected_icon = None
+
+        Honey_screen.bind("<Button-1>", clear_selection)
 
 voice_widget = VoiceAssistantWidget(desktop, font_size=12, button_command=lambda: None,mic_icon=icons["mic"])
 desktop.add_widget(voice_widget, width=600, height=80)
@@ -362,7 +382,7 @@ voice_widget.show_feedback("Say 'Honey' to activate commands...")
 voice_controller = VoiceController(
     toolbar=toolbar,
     icons=icons,
-    mic_icon=icons["microphone"],
+    mic_icon=icons["mic"],
     mic_listening_icon=icons["mic_listen"],
     display_feedback=voice_widget.show_feedback,
     calculator=calculator,
@@ -418,21 +438,7 @@ def set_file_path(path):
   file_state.set_file_path(path)
 
 
-############################################################################################
-######                      TOOLBAR  |  BUTTONS                       ######
-############################################################################################
-
-# Voice command feedback area
-voice_command_feedback = Text(Honey_screen, height=3, font = Font(family="Courier New", size=20, weight="bold"), state=DISABLED, bg=light_theme["output_bg"], fg=light_theme["output_fg"])
-voice_command_feedback.pack(side=BOTTOM, fill=X)
-voice_command_feedback.config()
-
-
 screen_height = Honey_screen.winfo_screenheight()
-
-
-# Optionally bind to button
-toolbar.mic_btn.config(command=voice_controller.activate_commands)
 
 
 Honey_screen.attributes('-fullscreen', True)

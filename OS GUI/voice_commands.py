@@ -1,5 +1,7 @@
 import threading
 import speech_recognition as sr
+import app_callbacks as apps
+from camera import CameraViewer
 
 class VoiceController:
     def __init__(self, toolbar, icons, mic_icon, mic_listening_icon,
@@ -45,6 +47,7 @@ class VoiceController:
                 try:
                     audio_data = r.listen(source)
                     text = r.recognize_google(audio_data).lower()
+                    print(text)
                     if "honey" in text:
                         print("Wake word detected")
                         self.toolbar.mic_btn.config(image=self.mic_listening_icon)
@@ -101,10 +104,22 @@ class VoiceController:
                     self.toolbar.commands["minimize"]()
                 elif command_text in ["exit please", "shut up", "avada kedavra", "yamete"]:
                     self.toolbar.commands["close"]()
-                elif "editor" in command_text:
+                elif "open editor" in command_text:
                     self.toolbar.commands["toggleEditor"]()
-                elif "calculator" in command_text:
-                    self.toolbar.commands["toggleCalculator"]()
+                elif"open simulation" in command_text:
+                    apps.open_simulator()
+                elif"open calculator" in command_text:
+                    apps.open_calculator()
+                elif"take picture" in command_text:
+                    apps.take_picture()
+                elif"open camera" in command_text:
+                    apps.open_camera()
+                elif"close camera" in command_text:
+                    apps.close_camera()
+                elif"close calculator" in command_text:
+                    apps.close_calculator()
+                elif"close editor" in command_text:
+                    self.toolbar.commands["closeEditor"]()
 
             except sr.WaitTimeoutError:
                 self.display_feedback_safe("You were a little quiet, dear. Try again?")
@@ -117,5 +132,4 @@ class VoiceController:
             except Exception as e:
                 self.display_feedback_safe(f"Sorry, dear. I didn't quite get that... ({str(e)})")
 
-            self.stop_listening()
             self.restore_mic_icon()
