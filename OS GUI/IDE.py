@@ -192,7 +192,7 @@ def save_as():
 
 
 def toggleEditor():
-    global isEditorActive, editor, editor_frame, toolbar, status_label
+    global isEditorActive, editor, editor_window, toolbar, status_label
 
     if isEditorActive == 1:
       if unsaved_changes:
@@ -283,7 +283,7 @@ def toggleEditor():
       # Bind any required events
       editor.bind('<Key>', check_text_and_toggle_buttons)
     else:
-        editor_frame.destroy()
+        editor_window.destroy()
         editor.destroy()  # removes the widget completely
 
 def closeEditor():
