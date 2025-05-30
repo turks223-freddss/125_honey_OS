@@ -97,14 +97,14 @@ class SchedulerSim(QtWidgets.QWidget):
         main_layout.addLayout(right_layout, stretch=1)  # right side smaller
 
         # Move all your current widgets except memory_table into left_layout:
-        self.table = QtWidgets.QTableWidget(10, 4)
-        self.table.setHorizontalHeaderLabels(["PID", "Arrival Time", "Burst Time", "Memory"])
+        self.table = QtWidgets.QTableWidget(10, 5)
+        self.table.setHorizontalHeaderLabels(["PID", "Arrival Time", "Burst Time", "Memory", "Priority"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         left_layout.addWidget(QtWidgets.QLabel("Enter Process Data:"))
         left_layout.addWidget(self.table)
 
         self.algorithm_box = QtWidgets.QComboBox()
-        self.algorithm_box.addItems(["First Come First Serve", "Shortest Job First", "Round Robin", "SRPT"])
+        self.algorithm_box.addItems(["First Come First Serve", "Shortest Job First", "Round Robin", "SRPT", "Priority (Non-Preemptive)", "Priority (Preemptive)"])
         left_layout.addWidget(QtWidgets.QLabel("Select Scheduling Algorithm:"))
         left_layout.addWidget(self.algorithm_box)
 
@@ -186,10 +186,12 @@ class SchedulerSim(QtWidgets.QWidget):
                 at = random.randint(0, 10)
                 bt = random.randint(1, 10)
                 mem = random.choice([25, 45, 60, 80, 100, 120])
+                Prio = random.randint(1,5)
                 self.table.setItem(row, 0, QTableWidgetItem(process_name))
                 self.table.setItem(row, 1, QTableWidgetItem(str(at)))
                 self.table.setItem(row, 2, QTableWidgetItem(str(bt)))
                 self.table.setItem(row, 3, QTableWidgetItem(str(mem)))
+                self.table.setItem(row, 4, QTableWidgetItem(str(Prio)))
                 
         for row in range(self.table.rowCount()):
             try:
@@ -197,7 +199,8 @@ class SchedulerSim(QtWidgets.QWidget):
                 at = int(self.table.item(row, 1).text())
                 bt = int(self.table.item(row, 2).text())
                 mem = int(self.table.item(row, 3).text())
-                self.sim_processes.append({"pid": pid, "at": at, "bt": bt, "remaining": bt, "mem":mem})
+                prio = int(self.table.item(row, 4).text())
+                self.sim_processes.append({"pid": pid, "at": at, "bt": bt, "remaining": bt, "mem":mem, "prio": prio})
             except:
                 continue
 
@@ -328,57 +331,33 @@ class SchedulerSim(QtWidgets.QWidget):
             if self.current_process and self.current_process != shortest:
                 self.ready_queue.append(self.current_process)
             return shortest
+        
+        elif self.algorithm == "Priority (Non-Preemptive)":
+            # Non-preemptive priority: pick process with highest priority (lowest number)
+            highest_prio = min(self.ready_queue, key=lambda p: p["prio"])
+            self.ready_queue.remove(highest_prio)
+            return highest_prio
 
-    def run_fcfs(self):
-        if not self.current_process and self.sim_queue:
-            self.current_process = self.sim_queue.popleft()
+        elif self.algorithm == "Priority (Preemptive)":
+            # Preemptive priority: compare current process and ready queue, pick highest priority
+            candidates = list(self.ready_queue)
+            if self.current_process:
+                candidates.append(self.current_process)
+            highest_prio = min(candidates, key=lambda p: p["prio"])
 
-        if self.current_process:
-            self.current_process["remaining"] -= 1
-            if self.current_process["remaining"] == 0:
-                self.finish_process()
+            # Remove highest_prio from ready queue if present
+            if highest_prio in self.ready_queue:
+                self.ready_queue.remove(highest_prio)
+            # If current process is not highest priority, preempt
+            if self.current_process and self.current_process != highest_prio:
+                if self.current_process not in self.ready_queue:
+                    self.ready_queue.append(self.current_process)
+            return highest_prio
 
-    def run_sjf(self):
-        if not self.current_process:
-            if self.sim_queue:
-                self.current_process = min(self.sim_queue, key=lambda x: x["bt"])
-                self.sim_queue.remove(self.current_process)
+        else:
+            # Default fallback FCFS
+            return self.ready_queue.popleft()
 
-        if self.current_process:
-            self.current_process["remaining"] -= 1
-            if self.current_process["remaining"] == 0:
-                self.finish_process()
-
-    def run_rr(self):
-        if not self.current_process and self.sim_queue:
-            self.current_process = self.sim_queue.popleft()
-            self.quantum_counter = 0
-
-        if self.current_process:
-            self.current_process["remaining"] -= 1
-            self.quantum_counter += 1
-
-            if self.current_process["remaining"] == 0:
-                self.finish_process()
-            elif self.quantum_counter == self.quantum:
-                self.sim_queue.append(self.current_process)
-                self.current_process = None
-
-    def run_srpt(self):
-        all_ready = list(self.sim_queue)
-        if self.current_process:
-            all_ready.append(self.current_process)
-
-        if all_ready:
-            self.current_process = min(all_ready, key=lambda x: x["remaining"])
-            all_ready.remove(self.current_process)
-            self.sim_queue = deque(all_ready)
-
-        if self.current_process:
-            self.current_process["remaining"] -= 1
-            if self.current_process["remaining"] == 0:
-                self.finish_process()
-    
     def allocate_memory(self, pid, blocks_needed):
         strategy = self.allocation_strategy_box.currentText()
 
