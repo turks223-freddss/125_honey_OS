@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime
+import app_callbacks as apps
 
 class Taskbar(tk.Frame):
     def __init__(self, master=None, apps=None, app_callbacks=None, **kwargs):
@@ -128,6 +129,8 @@ class Taskbar(tk.Frame):
         else:
             self.show_start_menu()
 
+    
+
     def show_start_menu(self):
         if self.start_menu is None or not self.start_menu.winfo_exists():
             self.start_menu = tk.Toplevel(self)
@@ -140,9 +143,8 @@ class Taskbar(tk.Frame):
 
             # Menu items: (label, callback)
             menu_items = [
-                ("📁 Files", lambda: self._launch_app_from_menu("Files")),
-                ("⏻ Shutdown ", lambda: self._launch_app_from_menu("Terminal")),
-                ("⚙️ Settings", lambda: self._launch_app_from_menu("Settings")),
+                ("📁 Files", lambda: self._launch_app_from_menu("Settings")),
+                ("⏻ Shutdown ", lambda: apps.shutdown()),
             ]
 
             # Create buttons with hover style

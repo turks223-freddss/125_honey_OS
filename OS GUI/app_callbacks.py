@@ -25,6 +25,15 @@ def open_camera():
         camera_instance = CameraViewer(Honey_screen)
         camera_instance.open_camera()
 
+def take_picture():
+    global camera_instance
+    print("reached not)")
+    if camera_instance is not None and camera_instance.running:
+        print("reached)")
+        camera_instance.take_picture()
+    else:
+        print("Camera is not running, cannot take picture.")
+
 def close_camera():
     global camera_instance
     if camera_instance is not None and camera_instance.running:
@@ -96,6 +105,9 @@ def open_calculator():
 
     isCalculatorActive = True
 
+def shutdown():
+    Honey_screen.destroy()
+
 def close_calculator():
     global isCalculatorActive, calculator
     if calculator is not None:
@@ -134,11 +146,3 @@ def set_main_screen(screen):
 
 def open_files():
     print("Files opened!")
-
-def take_picture():
-    global camera_viewer
-    print("hello")
-    if camera_viewer:
-        camera_viewer.take_picture()
-    else:
-        print("Camera viewer not initialized. Call set_main_screen() first.")
