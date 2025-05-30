@@ -218,6 +218,11 @@ class CameraViewer:
         self.overlay.bind_all("<Left>", lambda e: self.prev_image())
         self.overlay.bind_all("<Right>", lambda e: self.next_image())
 
+    def close_image_overlay(self, event=None):
+        if self.overlay:
+            self.overlay.destroy()
+            self.overlay = None
+
     def display_overlay_image(self):
         if self.overlay and 0 <= self.current_image_index < len(self.image_files):
             try:
