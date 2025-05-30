@@ -214,67 +214,70 @@ def toggleEditor():
     else:
         isEditorActive = 1
 
-    # Create a floating, borderless, draggable window
-    editor_window = tk.Toplevel(Honey_screen)
-    editor_window.overrideredirect(True)
-    editor_window.geometry("500x400+150+150")
 
-    # === Header Frame (Draggable Title Bar) ===
-    header = tk.Frame(editor_window, bg="gray20")
-    header.pack(fill="x")
+    if isEditorActive == 1:
+      # Create a floating, borderless, draggable window
+      editor_window = tk.Toplevel(Honey_screen)
+      editor_window.overrideredirect(True)
+      editor_window.geometry("500x400+150+150")
+      editor_window.attributes("-topmost", True)
 
-    title = tk.Label(header, text="Editor", fg="white", bg="gray20", font=("Arial", 10, "bold"))
-    title.pack(side="left", padx=5)
+      # === Header Frame (Draggable Title Bar) ===
+      header = tk.Frame(editor_window, bg="gray20")
+      header.pack(fill="x")
 
-    def close_editor():
-        global isEditorActive, editor_window
-        isEditorActive = 0
-        editor_window.destroy()
-        editor_window = None
+      title = tk.Label(header, text="Editor", fg="white", bg="gray20", font=("Arial", 10, "bold"))
+      title.pack(side="left", padx=5)
 
-    close_button = tk.Button(header, text="✖", command=close_editor,
-                             bg="red", fg="white", font=("Arial", 10, "bold"),
-                             bd=0, cursor="hand2")
-    close_button.pack(side="right", padx=5, pady=2)
+      def close_editor():
+          global isEditorActive, editor_window
+          isEditorActive = 0
+          editor_window.destroy()
+          editor_window = None
 
-    # === Make Header Draggable ===
-    def start_move(event):
-        editor_window.x = event.x
-        editor_window.y = event.y
+      close_button = tk.Button(header, text="✖", command=close_editor,
+                              bg="red", fg="white", font=("Arial", 10, "bold"),
+                              bd=0, cursor="hand2")
+      close_button.pack(side="right", padx=5, pady=2)
 
-    def do_move(event):
-        x = editor_window.winfo_x() + event.x - editor_window.x
-        y = editor_window.winfo_y() + event.y - editor_window.y
-        editor_window.geometry(f"+{x}+{y}")
+      # === Make Header Draggable ===
+      def start_move(event):
+          editor_window.x = event.x
+          editor_window.y = event.y
 
-    header.bind("<ButtonPress-1>", start_move)
-    header.bind("<B1-Motion>", do_move)
+      def do_move(event):
+          x = editor_window.winfo_x() + event.x - editor_window.x
+          y = editor_window.winfo_y() + event.y - editor_window.y
+          editor_window.geometry(f"+{x}+{y}")
 
-    # === Content Frame ===
-    content = tk.Frame(editor_window)
-    content.pack(fill=BOTH, expand=True)
+      header.bind("<ButtonPress-1>", start_move)
+      header.bind("<B1-Motion>", do_move)
 
-    # Toolbar
-    toolbar = ToolbarEditor(content, icons=icons, callbacks={
-        "open_new_file": open_new_file,
-        "open_existing_file": open_existing_file,
-        "save": save,
-        "save_as": save_as,
-        "copy": copy_text,
-        "paste": paste_text,
-        "cut": cut_text,
-        "undo": undo_text,
-        "redo": redo_text
+      # === Content Frame ===
+      content = tk.Frame(editor_window)
+      content.pack(fill=BOTH, expand=True)
 
-    }, create_tooltip=create_tooltip
-      )
+      # Toolbar
+      toolbar = ToolbarEditor(content, icons=icons, callbacks={
+          "open_new_file": open_new_file,
+          "open_existing_file": open_existing_file,
+          "save": save,
+          "save_as": save_as,
+          "copy": copy_text,
+          "paste": paste_text,
+          "cut": cut_text,
+          "undo": undo_text,
+          "redo": redo_text
+
+          }, create_tooltip=create_tooltip
+            )
       toolbar.pack(side=TOP, fill=X)
 
-      status_label = Label(editor_frame, text="", anchor="w", fg="gray")
+      status_label = Label(editor_window, text="", anchor="w", fg="gray")
       status_label.pack(fill=X, padx=5, pady=(0,5))
 
       # Create and pack the Text editor just below the toolbar
-      editor = Text(editor_frame, undo=True, relief=FLAT)
+      editor = Text(editor_window, undo=True, relief=FLAT)
       editor.pack(side=LEFT, fill=BOTH, expand=False, padx=10, pady=20)
 
       # Bind any required events
