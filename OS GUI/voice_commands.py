@@ -113,14 +113,14 @@ class VoiceController:
                     apps.close_simulator()
                 elif"open calculator" in command_text:
                     apps.open_calculator()
-                elif"take picture" in command_text:
-                    apps.take_picture()
                 elif"open camera" in command_text:
                     apps.open_camera()
                 elif"close camera" in command_text:
                     apps.close_camera()
                 elif"close calculator" in command_text:
                     apps.close_calculator()
+                elif"take a picture" in command_text:
+                    apps.take_picture()
                 elif"close editor" in command_text:
                     self.toolbar.commands["closeEditor"]()
 

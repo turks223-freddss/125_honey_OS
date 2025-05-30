@@ -160,7 +160,6 @@ def open_new_file():
   update_save_state()
   update_status_label()
 
-
 # Opens an existing file
 def open_existing_file():
   global file_path, unsaved_changes
@@ -183,7 +182,6 @@ def save():
   unsaved_changes = False
   update_save_state()
   update_status_label()
-
 
 # This function saves the content of the editor to a new file
 def save_as():
@@ -349,7 +347,8 @@ toolbar = ToolbarTop(
         "activate_commands": lambda: None,  # Temporary placeholder
         "toggleEditor": toggleEditor,
         "closeEditor": closeEditor,
-        "open_camera": camera_viewer.open_camera
+        "open_camera": camera_viewer.open_camera,
+        "take_picture" : camera_viewer.take_picture,
     },
     create_tooltip=create_tooltip
 )
@@ -368,6 +367,7 @@ desktop.add_icon("Simulation", "OS GUI/assets/existing_file.png", apps.open_simu
 
 
 desktop.bind("<Button-1>", lambda e: DesktopIcon.selected_icon and DesktopIcon.selected_icon.deselect())
+
 
 
 def clear_selection(event):

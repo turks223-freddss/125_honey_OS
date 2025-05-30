@@ -11,12 +11,7 @@ class Toolbar(tk.Frame):
 class ToolbarTop(Toolbar):
     def __init__(self, master, icons, callbacks, create_tooltip, **kwargs):
         super().__init__(master, icons, callbacks, create_tooltip, **kwargs)
-        # Exit Button
-        self.close_btn = tk.Button(self, image=self.icons["close"], command=self.callbacks["close_window"], relief=FLAT)
-        self.close_btn.image = self.icons["close"]
-        self.close_btn.pack(side=RIGHT, padx=5, pady=2)
-        self.create_tooltip(self.close_btn, "Exit")
-
+        
         self.mic_btn = tk.Button(self, image=self.icons["mic"], command=self.callbacks["activate_commands"], relief=FLAT)
         self.mic_btn.image = self.icons["mic"]
         self.mic_btn.pack(side=RIGHT, padx=2, pady=2)
