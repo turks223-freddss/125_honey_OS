@@ -185,7 +185,7 @@ class SchedulerSim(QtWidgets.QWidget):
                 used_process_names.add(process_name)
                 at = random.randint(0, 10)
                 bt = random.randint(1, 10)
-                mem = random.choice([20, 40, 60, 80, 100, 120])
+                mem = random.choice([25, 45, 60, 80, 100, 120])
                 self.table.setItem(row, 0, QTableWidgetItem(process_name))
                 self.table.setItem(row, 1, QTableWidgetItem(str(at)))
                 self.table.setItem(row, 2, QTableWidgetItem(str(bt)))
