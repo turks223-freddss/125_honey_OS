@@ -48,6 +48,12 @@ def open_calculator():
     calculator = tk.Toplevel(Honey_screen)
     calculator.overrideredirect(True)
     calculator.geometry("250x300+100+100")
+    calculator.attributes("-topmost", True)  # 🟡 Always stay on top
+
+    # 🟡 Prevent it from hiding by forcing focus back
+    def on_focus_out(event):
+        calculator.focus_force()
+    calculator.bind("<FocusOut>", on_focus_out)
 
     # === Header Frame ===
     header = tk.Frame(calculator, bg="gray20")
