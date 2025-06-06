@@ -123,6 +123,14 @@ class VoiceController:
                     apps.take_picture()
                 elif"close editor" in command_text:
                     self.toolbar.commands["closeEditor"]()
+                elif"display gallery" in command_text:
+                    apps.display_gallery()
+                elif"close gallery" in command_text:
+                    apps.close_gallery()
+                elif"before" in command_text:
+                    apps.prev_image()
+                elif"next" in command_text:
+                    apps.next_image()
 
             except sr.WaitTimeoutError:
                 self.display_feedback_safe("You were a little quiet, dear. Try again?")

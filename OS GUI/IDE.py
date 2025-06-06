@@ -229,7 +229,22 @@ def toggleEditor():
 
       def close_editor():
           global isEditorActive, editor_window
-          isEditorActive = 0
+          if unsaved_changes:
+            response = messagebox.askyesnocancel(
+                "Unsaved Changes",
+                "You have unsaved changes. Do you want to save before closing?"
+            )
+
+            if response:
+                save()
+                isEditorActive = 0
+
+            elif response is None:
+                return
+            
+            else:
+                isEditorActive = 0
+
           editor_window.destroy()
           editor_window = None
 
@@ -342,6 +357,15 @@ toolbar = ToolbarTop(
     Honey_screen,
     icons=icons,
     callbacks={
+       "open_new_file": open_new_file,
+        "open_existing_file": open_existing_file,
+        "save": save,
+        "save_as": save_as,
+        "copy": copy_text,
+        "paste": paste_text,
+        "cut": cut_text,
+        "undo": undo_text,
+        "redo": redo_text,
         "close_window": close_window,
         "toggle_theme": toggle_theme,
         "activate_commands": lambda: None,  # Temporary placeholder
@@ -358,6 +382,11 @@ desktop = Desktop(Honey_screen, grid_size=75)
 desktop.pack(fill="both", expand=True)
 
 
+cut_text = lambda: editor_actions.cut(editor)
+copy_text = lambda: editor_actions.copy(editor)
+paste_text = lambda: editor_actions.paste(editor)
+undo_text = lambda: editor_actions.undo(editor)
+redo_text = lambda: editor_actions.redo(editor)
 
 desktop.add_icon("File Editor", "OS GUI/assets/new_file.png", toggleEditor, (0, 0))
 desktop.add_icon("Calculator", "OS GUI/assets/calculator.png", apps.open_calculator, (100, 0))

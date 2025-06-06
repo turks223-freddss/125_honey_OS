@@ -34,6 +34,43 @@ def take_picture():
     else:
         print("Camera is not running, cannot take picture.")
 
+def display_gallery():
+    global camera_instance
+    print("reached gallery)")
+    if camera_instance is not None and camera_instance.running:
+        print("reached)")
+        camera_instance.show_image_overlay()
+    else:
+        print("Camera is not running, cannot take picture.")
+
+def prev_image():
+    global camera_instance
+    print("reached gallery)")
+    if camera_instance is not None and camera_instance.running:
+        print("reached)")
+        camera_instance.prev_image()
+    else:
+        print("Camera is not running, cannot take picture.")
+
+def next_image():
+    global camera_instance
+    print("reached gallery)")
+    if camera_instance is not None and camera_instance.running:
+        print("reached)")
+        camera_instance.next_image()
+    else:
+        print("Camera is not running, cannot take picture.")
+
+def close_gallery():
+    global camera_instance
+    print("reached gallery)")
+    if camera_instance is not None and camera_instance.running:
+        print("reached)")
+        camera_instance.close_image_overlay()
+    else:
+        print("Camera is not running, cannot take picture.")
+
+
 def close_camera():
     global camera_instance
     if camera_instance is not None and camera_instance.running:
