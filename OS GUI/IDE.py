@@ -33,7 +33,7 @@ from desktop_icon import DesktopIcon
 honeyBoot = StartUp(
         path="OS GUI/assets/Final.mp4",  # Adjust path if needed
         window_size=(780, 518),
-        duration=2,
+        duration=13,
         fullscreen=False  # or True if you prefer fullscreen
     )
 honeyBoot.play()
