@@ -1,39 +1,47 @@
-# VERSION 2
-# INSTALLATION PROCESS
+# Honey OS - Version 2
 
-- Retrieve Code Base:
+## Installation Process
 
-    - - Just choose between the two methods 
-        - - - 1. GitHub
-            - - - - Go to the original repository on GitHub
-                - - - - - https://github.com/turks223-freddss/125_honey_OS
-            - - - - Click the “Fork” button (top right)
-            - - - - Select your GitHub account or organization
-            - - - - GitHub will create a copy under your account
-            - - - - Clone repository that you forked in to your local machines
-                - - - - - git clone {repository link}
-                - - - - - cd your-forked-repo
+### 1. Retrieve the Code Base
 
-        - - 2. Zip File
-            - - - Download ZipFile
+You can choose **one** of the following two methods:
 
-- Download all dependencies
-    - - pip install Pillow
-    - - pip install PyAudio
-    - - pip install SpeechRecognition 
-    - - pip install PyAudio
-    - - pip install opencv-python
-    - - pip install noisereduce
-    - - pip install numpy
-    - - pip install wave
-    - - pip install pygame
-    - - pip install PyQt5
-    - - pip install PyQt5-tools
-    - - pip install pipwin
-    - - pip install opencv-python
+#### Option 1: GitHub (Recommended)
+1. Go to the original repository:  
+   [https://github.com/turks223-freddss/125_honey_OS](https://github.com/turks223-freddss/125_honey_OS)
+2. Click the **"Fork"** button (top right).
+3. Select your GitHub account or organization.
+4. GitHub will create a fork under your account.
+5. Clone the forked repository to your local machine:
+    ```bash
+    git clone https://github.com/your-username/125_honey_OS.git
+    cd 125_honey_OS
+    ```
 
-- Execute code 
-    - - Go to IDE.py file under OS GUI and execute the file
+#### Option 2: Download as ZIP
+1. Go to the GitHub repository.
+2. Click **"Code"** > **"Download ZIP"**.
+3. Extract the ZIP file on your machine.
+
+---
+
+### 2. Install Dependencies
+
+Use pip to install all required packages:
+
+```bash
+pip install Pillow
+pip install PyAudio
+pip install SpeechRecognition
+pip install opencv-python
+pip install noisereduce
+pip install numpy
+pip install wave
+pip install pygame
+pip install PyQt5
+pip install PyQt5-tools
+pip i
+```
 
 
 # VERSION 1 (OLD)
