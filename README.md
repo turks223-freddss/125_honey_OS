@@ -42,6 +42,14 @@ pip install PyQt5
 pip install PyQt5-tools
 pip install pipwin
 ```
+### 3. Run the Application
+
+Navigate to the main script: (OS GUI) and execute it.
+
+```bash
+cd "OS GUI"
+python IDE.py
+```
 
 
 # VERSION 1 (OLD)
