@@ -32,7 +32,8 @@ class VoiceAssistantWidget(tk.Frame):
             relief="flat",
             wrap="word"
         )
-        self.text_display.grid(row=0, column=0, sticky="nsew", padx=(0, 0))
+        self.text_display.tag_configure("margin", lmargin1=10, lmargin2=10, rmargin=10)
+        self.text_display.grid(row=0, column=0, sticky="nsew", padx=(10, 10))
         
         self.button_command = button_command
 
@@ -81,7 +82,7 @@ class VoiceAssistantWidget(tk.Frame):
     def show_feedback(self, message: str):
         self.text_display.config(state=tk.NORMAL)
         self.text_display.delete("1.0", tk.END)
-        self.text_display.insert(tk.END, message)
+        self.text_display.insert(tk.END, "\n" + message, "margin")
         self.text_display.config(state=tk.DISABLED)
 
     def on_button_click(self):
