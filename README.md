@@ -3,37 +3,37 @@
 
 - Retrieve Code Base:
 
-    Just choose between the two methods 
-        1. GitHub
-            - Go to the original repository on GitHub
-                https://github.com/turks223-freddss/125_honey_OS
-            - Click the “Fork” button (top right)
-            - Select your GitHub account or organization
-            - GitHub will create a copy under your account
-            - Clone repository that you forked in to your local machines
-                git clone {repository link}
-                cd your-forked-repo
+    - - Just choose between the two methods 
+        - - - 1. GitHub
+            - - - - Go to the original repository on GitHub
+                - - - - - https://github.com/turks223-freddss/125_honey_OS
+            - - - - Click the “Fork” button (top right)
+            - - - - Select your GitHub account or organization
+            - - - - GitHub will create a copy under your account
+            - - - - Clone repository that you forked in to your local machines
+                - - - - - git clone {repository link}
+                - - - - - cd your-forked-repo
 
-        2. Zip File
-            - Download ZipFile
+        - - 2. Zip File
+            - - - Download ZipFile
 
 - Download all dependencies
-    pip install Pillow
-    pip install PyAudio
-    pip install SpeechRecognition 
-    pip install PyAudio
-    pip install opencv-python
-    pip install noisereduce
-    pip install numpy
-    pip install wave
-    pip install pygame
-    pip install PyQt5
-    pip install PyQt5-tools
-    pip install pipwin
-    pip install opencv-python
+    - - pip install Pillow
+    - - pip install PyAudio
+    - - pip install SpeechRecognition 
+    - - pip install PyAudio
+    - - pip install opencv-python
+    - - pip install noisereduce
+    - - pip install numpy
+    - - pip install wave
+    - - pip install pygame
+    - - pip install PyQt5
+    - - pip install PyQt5-tools
+    - - pip install pipwin
+    - - pip install opencv-python
 
 - Execute code 
-    Go to IDE.py file under OS GUI and execute the file
+    - - Go to IDE.py file under OS GUI and execute the file
 
 
 # VERSION 1 (OLD)
