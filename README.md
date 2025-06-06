@@ -40,7 +40,7 @@ pip install wave
 pip install pygame
 pip install PyQt5
 pip install PyQt5-tools
-pip intall pipwin
+pip install pipwin
 ```
 
 
